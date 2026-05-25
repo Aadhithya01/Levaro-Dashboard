@@ -21,10 +21,11 @@ export default function Products() {
   const navigate = useNavigate()
 
   async function fetchProducts() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('products')
       .select('*, purchases(quantity, price_per_piece), sales(quantity_sold, selling_price)')
       .order('created_at', { ascending: false })
+    if (error) { console.error('Failed to fetch products:', error); setLoading(false); return }
     setProducts(data ?? [])
     setLoading(false)
   }
