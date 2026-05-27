@@ -39,3 +39,16 @@ CREATE POLICY "authenticated users can do everything on purchases"
 
 CREATE POLICY "authenticated users can do everything on sales"
   ON sales FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Migration: add_categories (2026-05-27)
+CREATE TABLE categories (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  name text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE products ADD COLUMN category_id uuid REFERENCES categories(id) ON DELETE SET NULL;
+
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated users can do everything on categories"
+  ON categories FOR ALL TO authenticated USING (true) WITH CHECK (true);
