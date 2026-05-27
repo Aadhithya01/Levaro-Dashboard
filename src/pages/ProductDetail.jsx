@@ -29,8 +29,8 @@ export default function ProductDetail() {
 
   useEffect(() => { fetchData() }, [id])
 
-  if (loading) return <div className="min-h-screen bg-gray-50"><Navbar /><p className="p-8 text-gray-500 text-sm">Loading...</p></div>
-  if (!product) return <div className="min-h-screen bg-gray-50"><Navbar /><p className="p-8 text-gray-500 text-sm">Product not found.</p></div>
+  if (loading) return <div className="min-h-screen bg-brand-cream"><Navbar /><p className="p-8 text-gray-500 text-sm">Loading...</p></div>
+  if (!product) return <div className="min-h-screen bg-brand-cream"><Navbar /><p className="p-8 text-gray-500 text-sm">Product not found.</p></div>
 
   const totalCost = purchases.reduce((sum, p) => sum + p.quantity * p.price_per_piece, 0)
   const totalPurchasedQty = purchases.reduce((sum, p) => sum + p.quantity, 0)
@@ -40,49 +40,47 @@ export default function ProductDetail() {
   const profit = totalRevenue - totalCost
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-brand-cream">
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-8">
-        <button onClick={() => navigate('/')} className="text-sm text-indigo-600 hover:underline mb-4 block">← Back to Products</button>
-        <h1 className="text-xl font-bold text-gray-800 mb-2">{product.name}</h1>
+        <button onClick={() => navigate(-1)} className="text-sm text-brand-green hover:underline mb-4 block">← Back</button>
+        <h1 className="text-xl font-bold text-brand-green mb-2">{product.name}</h1>
 
-        {/* Summary row */}
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Stock', value: stock, unit: 'units' },
-            { label: 'Total Cost', value: `₹${totalCost.toFixed(2)}`, unit: '' },
-            { label: 'Total Revenue', value: `₹${totalRevenue.toFixed(2)}`, unit: '' },
-            { label: 'Profit', value: `₹${profit.toFixed(2)}`, unit: '', color: profit >= 0 ? 'text-green-600' : 'text-red-500' },
-          ].map(({ label, value, unit, color }) => (
-            <div key={label} className="bg-white rounded-lg shadow p-4">
-              <p className="text-xs text-gray-500 mb-1">{label}</p>
-              <p className={`text-lg font-semibold ${color ?? 'text-gray-800'}`}>{value} {unit}</p>
+            { label: 'Stock', value: `${stock} units` },
+            { label: 'Total Cost', value: `₹${totalCost.toFixed(2)}` },
+            { label: 'Total Revenue', value: `₹${totalRevenue.toFixed(2)}` },
+            { label: 'Profit', value: `₹${profit.toFixed(2)}`, color: profit >= 0 ? 'text-brand-green' : 'text-red-500' },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="bg-white rounded-lg border border-brand-border p-4">
+              <p className="text-xs text-gray-400 mb-1">{label}</p>
+              <p className={`text-lg font-semibold ${color ?? 'text-gray-800'}`}>{value}</p>
             </div>
           ))}
         </div>
 
-        {/* Purchases */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-gray-700">Purchases</h2>
-            <button onClick={() => setShowPurchase(true)} className="text-sm bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700">+ Add Purchase</button>
+            <h2 className="font-semibold text-brand-green">Purchases</h2>
+            <button onClick={() => setShowPurchase(true)} className="text-sm bg-brand-green text-brand-gold px-3 py-1.5 rounded hover:opacity-90">+ Add Purchase</button>
           </div>
           {purchases.length === 0 ? (
             <p className="text-gray-400 text-sm">No purchases yet.</p>
           ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="bg-white rounded-lg border border-brand-border overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-brand-green">
                   <tr>
-                    <th className="text-left px-4 py-3 text-gray-600 font-medium">Date</th>
-                    <th className="text-right px-4 py-3 text-gray-600 font-medium">Qty</th>
-                    <th className="text-right px-4 py-3 text-gray-600 font-medium">Price/Piece (₹)</th>
-                    <th className="text-right px-4 py-3 text-gray-600 font-medium">Total (₹)</th>
+                    <th className="text-left px-4 py-3 text-brand-gold font-medium">Date</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Qty</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Price/Piece (₹)</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Total (₹)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-brand-border">
                   {purchases.map(p => (
-                    <tr key={p.id} className="hover:bg-gray-50">
+                    <tr key={p.id} className="hover:bg-brand-cream">
                       <td className="px-4 py-3 text-gray-700">{p.date_of_purchase}</td>
                       <td className="px-4 py-3 text-right text-gray-700">{p.quantity}</td>
                       <td className="px-4 py-3 text-right text-gray-700">₹{Number(p.price_per_piece).toFixed(2)}</td>
@@ -95,32 +93,31 @@ export default function ProductDetail() {
           )}
         </div>
 
-        {/* Sales */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-gray-700">Sales</h2>
-            <button onClick={() => setShowSale(true)} className="text-sm bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700">+ Add Sale</button>
+            <h2 className="font-semibold text-brand-green">Sales</h2>
+            <button onClick={() => setShowSale(true)} className="text-sm bg-brand-green text-brand-gold px-3 py-1.5 rounded hover:opacity-90">+ Add Sale</button>
           </div>
           {sales.length === 0 ? (
             <p className="text-gray-400 text-sm">No sales yet.</p>
           ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="bg-white rounded-lg border border-brand-border overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-brand-green">
                   <tr>
-                    <th className="text-left px-4 py-3 text-gray-600 font-medium">Date</th>
-                    <th className="text-right px-4 py-3 text-gray-600 font-medium">Qty Sold</th>
-                    <th className="text-right px-4 py-3 text-gray-600 font-medium">Selling Price (₹)</th>
-                    <th className="text-right px-4 py-3 text-gray-600 font-medium">Revenue (₹)</th>
+                    <th className="text-left px-4 py-3 text-brand-gold font-medium">Date</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Qty Sold</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Selling Price (₹)</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Revenue (₹)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-brand-border">
                   {sales.map(s => (
-                    <tr key={s.id} className="hover:bg-gray-50">
+                    <tr key={s.id} className="hover:bg-brand-cream">
                       <td className="px-4 py-3 text-gray-700">{s.sale_date}</td>
                       <td className="px-4 py-3 text-right text-gray-700">{s.quantity_sold}</td>
                       <td className="px-4 py-3 text-right text-gray-700">₹{Number(s.selling_price).toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right font-medium text-green-600">₹{(s.quantity_sold * s.selling_price).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right font-medium text-brand-green">₹{(s.quantity_sold * s.selling_price).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
