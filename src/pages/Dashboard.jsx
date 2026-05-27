@@ -18,7 +18,6 @@ export default function Dashboard() {
       const prods = data ?? []
       setProducts(prods)
 
-      // Aggregate sales by date across all products
       const byDate = {}
       prods.forEach(p => {
         p.sales.forEach(s => {
@@ -48,58 +47,58 @@ export default function Dashboard() {
     ).toFixed(2)),
   }))
 
-  if (loading) return <div className="min-h-screen bg-gray-50"><Navbar /><p className="p-8 text-gray-500 text-sm">Loading...</p></div>
+  if (loading) return <div className="min-h-screen bg-brand-cream"><Navbar /><p className="p-8 text-gray-500 text-sm">Loading...</p></div>
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-brand-cream">
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-10">
-        <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
+        <h1 className="text-xl font-bold text-brand-green">Dashboard</h1>
 
         <div>
-          <h2 className="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">Stock Levels</h2>
-          <div className="bg-white rounded-lg shadow p-4">
+          <h2 className="text-xs font-semibold text-brand-green mb-3 uppercase tracking-widest">Stock Levels</h2>
+          <div className="bg-white rounded-lg border border-brand-border p-4">
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={stockData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e8e0d0" />
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
-                <Bar dataKey="stock" fill="#6366f1" name="Stock" />
+                <Bar dataKey="stock" fill="#1a5c45" name="Stock" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div>
-          <h2 className="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">Profit per Product (₹)</h2>
-          <div className="bg-white rounded-lg shadow p-4">
+          <h2 className="text-xs font-semibold text-brand-green mb-3 uppercase tracking-widest">Profit per Product (₹)</h2>
+          <div className="bg-white rounded-lg border border-brand-border p-4">
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={profitData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e8e0d0" />
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip formatter={v => `₹${v}`} />
-                <Bar dataKey="profit" fill="#22c55e" name="Profit (₹)" />
+                <Bar dataKey="profit" fill="#e8c96a" name="Profit (₹)" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div>
-          <h2 className="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">Sales Revenue Over Time (₹)</h2>
-          <div className="bg-white rounded-lg shadow p-4">
+          <h2 className="text-xs font-semibold text-brand-green mb-3 uppercase tracking-widest">Sales Revenue Over Time (₹)</h2>
+          <div className="bg-white rounded-lg border border-brand-border p-4">
             {salesOverTime.length === 0 ? (
               <p className="text-gray-400 text-sm py-8 text-center">No sales data yet.</p>
             ) : (
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={salesOverTime}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e8e0d0" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip formatter={v => `₹${v}`} />
                   <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#6366f1" name="Revenue (₹)" dot={false} />
+                  <Line type="monotone" dataKey="revenue" stroke="#1a5c45" name="Revenue (₹)" dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             )}
