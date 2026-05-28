@@ -37,7 +37,7 @@ export default function Products() {
     setLoading(false)
   }
 
-  useEffect(() => { fetchData() }, [categoryId])
+  useEffect(() => { fetchData() }, [categoryId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen bg-brand-cream">
@@ -68,7 +68,7 @@ export default function Products() {
                 <div
                   key={product.id}
                   onClick={() => navigate(`/products/${product.id}`)}
-                  className="relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-brand-green transition-all shadow-sm"
+                  className="relative aspect-square rounded-xl overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-brand-green transition-all shadow-sm"
                 >
                   {product.image_url ? (
                     <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />

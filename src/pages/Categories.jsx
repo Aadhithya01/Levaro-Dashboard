@@ -48,7 +48,7 @@ export default function Categories() {
                 <div
                   key={cat.id}
                   onClick={() => navigate(`/categories/${cat.id}`)}
-                  className="relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-brand-green transition-all shadow-sm"
+                  className="relative aspect-square rounded-xl overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-brand-green transition-all shadow-sm"
                 >
                   <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
