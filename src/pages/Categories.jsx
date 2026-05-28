@@ -130,7 +130,7 @@ export default function Categories() {
                   </div>
                   <p className="font-semibold text-gray-800 text-sm">{cat.name}</p>
                   <p className="text-xs text-gray-400 mt-1">{count} product{count !== 1 ? 's' : ''}</p>
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); setEditingCategory(cat) }}
