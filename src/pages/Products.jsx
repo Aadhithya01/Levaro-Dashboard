@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Navbar from '../components/Navbar'
 import AddProductModal from '../components/AddProductModal'
+import EditProductModal from '../components/EditProductModal'
 
 function computeSummary(product) {
   const totalCost = product.purchases.reduce((sum, p) => sum + p.quantity * p.price_per_piece, 0)
@@ -21,6 +22,7 @@ export default function Products() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [editingProduct, setEditingProduct] = useState(null)
 
   async function fetchData() {
     const [{ data: cat }, { data: prods, error }] = await Promise.all([
@@ -39,6 +41,9 @@ export default function Products() {
 
   useEffect(() => { fetchData() }, [categoryId]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const totalStock = products.reduce((sum, p) => sum + computeSummary(p).stock, 0)
+  const totalProfit = products.reduce((sum, p) => sum + computeSummary(p).profit, 0)
+
   return (
     <div className="min-h-screen bg-brand-cream">
       <Navbar />
@@ -46,7 +51,7 @@ export default function Products() {
         <button onClick={() => navigate('/')} className="text-sm text-brand-green hover:underline mb-4 block">
           ← Back to Categories
         </button>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-brand-green">{category?.name ?? 'Products'}</h1>
           <button
             onClick={() => setShowModal(true)}
@@ -56,10 +61,43 @@ export default function Products() {
           </button>
         </div>
 
+        {!loading && products.length > 0 && (
+          <div className="flex gap-5 mb-6">
+            <div className="bg-white rounded-lg border border-brand-border px-4 py-2 text-sm">
+              <span className="font-semibold text-brand-green">{products.length}</span>
+              <span className="text-gray-400 ml-1">products</span>
+            </div>
+            <div className="bg-white rounded-lg border border-brand-border px-4 py-2 text-sm">
+              <span className="font-semibold text-brand-green">{totalStock}</span>
+              <span className="text-gray-400 ml-1">in stock</span>
+            </div>
+            <div className="bg-white rounded-lg border border-brand-border px-4 py-2 text-sm">
+              <span className={`font-semibold ${totalProfit >= 0 ? 'text-brand-green' : 'text-red-500'}`}>
+                ₹{totalProfit.toFixed(0)}
+              </span>
+              <span className="text-gray-400 ml-1">profit</span>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <p className="text-gray-500 text-sm">Loading...</p>
         ) : products.length === 0 ? (
-          <p className="text-gray-500 text-sm">No products yet. Add your first product.</p>
+          <div className="flex flex-col items-center py-16 text-center">
+            <div className="w-16 h-16 rounded-full bg-brand-green/10 flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-brand-green/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
+            <p className="text-gray-600 text-sm font-medium mb-1">No products yet</p>
+            <p className="text-gray-400 text-xs mb-5">Add your first product to start tracking inventory</p>
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-brand-green text-brand-gold px-4 py-2 rounded text-sm font-semibold hover:opacity-90"
+            >
+              + Add Product
+            </button>
+          </div>
         ) : (
           <div className="grid grid-cols-3 gap-4">
             {products.map(product => {
@@ -68,7 +106,7 @@ export default function Products() {
                 <div
                   key={product.id}
                   onClick={() => navigate(`/products/${product.id}`)}
-                  className="relative aspect-square rounded-xl overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-brand-green transition-all shadow-sm"
+                  className="relative group aspect-square rounded-xl overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-brand-green transition-all shadow-sm"
                 >
                   {product.image_url ? (
                     <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
@@ -88,6 +126,15 @@ export default function Products() {
                       </span>
                     </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); setEditingProduct(product) }}
+                    className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  >
+                    <svg className="w-3.5 h-3.5 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
                 </div>
               )
             })}
@@ -100,6 +147,13 @@ export default function Products() {
           categoryId={categoryId}
           onClose={() => setShowModal(false)}
           onAdded={fetchData}
+        />
+      )}
+      {editingProduct && (
+        <EditProductModal
+          product={editingProduct}
+          onClose={() => setEditingProduct(null)}
+          onUpdated={fetchData}
         />
       )}
     </div>
