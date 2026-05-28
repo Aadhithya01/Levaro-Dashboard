@@ -4,6 +4,19 @@ import { supabase } from '../lib/supabase'
 import Navbar from '../components/Navbar'
 import AddProductModal from '../components/AddProductModal'
 import EditProductModal from '../components/EditProductModal'
+import DeleteProductModal from '../components/DeleteProductModal'
+
+const PencilIcon = () => (
+  <svg className="w-3.5 h-3.5 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+  </svg>
+)
+
+const TrashIcon = () => (
+  <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+)
 
 function computeSummary(product) {
   const totalCost = product.purchases.reduce((sum, p) => sum + p.quantity * p.price_per_piece, 0)
@@ -23,6 +36,7 @@ export default function Products() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
+  const [deletingProduct, setDeletingProduct] = useState(null)
 
   async function fetchData() {
     const [{ data: cat }, { data: prods, error }] = await Promise.all([
@@ -131,15 +145,22 @@ export default function Products() {
                       </span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={e => { e.stopPropagation(); setEditingProduct(product) }}
-                    className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  >
-                    <svg className="w-3.5 h-3.5 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setEditingProduct(product) }}
+                      className="bg-white/90 hover:bg-white rounded-full p-1.5"
+                    >
+                      <PencilIcon />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setDeletingProduct(product) }}
+                      className="bg-white/90 hover:bg-red-50 rounded-full p-1.5"
+                    >
+                      <TrashIcon />
+                    </button>
+                  </div>
                 </div>
               )
             })}
@@ -159,6 +180,13 @@ export default function Products() {
           product={editingProduct}
           onClose={() => setEditingProduct(null)}
           onUpdated={fetchData}
+        />
+      )}
+      {deletingProduct && (
+        <DeleteProductModal
+          product={deletingProduct}
+          onClose={() => setDeletingProduct(null)}
+          onDeleted={fetchData}
         />
       )}
     </div>
