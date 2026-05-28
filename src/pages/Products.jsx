@@ -11,7 +11,7 @@ function computeSummary(product) {
   const totalRevenue = product.sales.reduce((sum, s) => sum + s.quantity_sold * s.selling_price, 0)
   const stock = totalPurchasedQty - totalSoldQty
   const profit = totalRevenue - totalCost
-  return { totalCost, totalRevenue, stock, profit }
+  return { stock, profit }
 }
 
 export default function Products() {
@@ -61,38 +61,36 @@ export default function Products() {
         ) : products.length === 0 ? (
           <p className="text-gray-500 text-sm">No products yet. Add your first product.</p>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden border border-brand-border">
-            <table className="w-full text-sm">
-              <thead className="bg-brand-green">
-                <tr>
-                  <th className="text-left px-4 py-3 text-brand-gold font-medium">Product</th>
-                  <th className="text-right px-4 py-3 text-brand-gold font-medium">Stock</th>
-                  <th className="text-right px-4 py-3 text-brand-gold font-medium">Total Cost (₹)</th>
-                  <th className="text-right px-4 py-3 text-brand-gold font-medium">Revenue (₹)</th>
-                  <th className="text-right px-4 py-3 text-brand-gold font-medium">Profit (₹)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-brand-border">
-                {products.map(product => {
-                  const { totalCost, totalRevenue, stock, profit } = computeSummary(product)
-                  return (
-                    <tr
-                      key={product.id}
-                      onClick={() => navigate(`/products/${product.id}`)}
-                      className="hover:bg-brand-cream cursor-pointer"
-                    >
-                      <td className="px-4 py-3 font-medium text-gray-800">{product.name}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">{stock}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">₹{totalCost.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">₹{totalRevenue.toFixed(2)}</td>
-                      <td className={`px-4 py-3 text-right font-medium ${profit >= 0 ? 'text-brand-green' : 'text-red-500'}`}>
-                        ₹{profit.toFixed(2)}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-3 gap-4">
+            {products.map(product => {
+              const { stock, profit } = computeSummary(product)
+              return (
+                <div
+                  key={product.id}
+                  onClick={() => navigate(`/products/${product.id}`)}
+                  className="relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-brand-green transition-all shadow-sm"
+                >
+                  {product.image_url ? (
+                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-brand-green/20 flex items-center justify-center">
+                      <span className="text-4xl font-bold text-brand-green/40">
+                        {product.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                    <p className="font-bold text-white text-sm truncate">{product.name}</p>
+                    <div className="flex justify-between mt-0.5">
+                      <span className="text-xs text-white/70">{stock} left</span>
+                      <span className={`text-xs font-semibold ${profit >= 0 ? 'text-brand-gold' : 'text-red-400'}`}>
+                        ₹{profit.toFixed(0)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
