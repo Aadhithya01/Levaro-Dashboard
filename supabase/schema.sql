@@ -70,3 +70,17 @@ CREATE POLICY "authenticated users can upload category images"
 CREATE POLICY "authenticated users can upload product images"
   ON storage.objects FOR INSERT TO authenticated
   WITH CHECK (bucket_id = 'product-images');
+
+-- Migration: add_avatars_bucket (2026-05-28)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "users can manage own avatar"
+  ON storage.objects FOR ALL TO authenticated
+  USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1])
+  WITH CHECK (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "avatars are publicly readable"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'avatars');
