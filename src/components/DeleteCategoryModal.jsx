@@ -12,10 +12,11 @@ export default function DeleteCategoryModal({ category, productCount, onClose, o
     setLoading(true)
     setError('')
 
-    const { data: products } = await supabase
+    const { data: products, error: fetchError } = await supabase
       .from('products')
       .select('id, image_url')
       .eq('category_id', category.id)
+    if (fetchError) { setError(fetchError.message); setLoading(false); return }
 
     if (products && products.length > 0) {
       const { error: prodError } = await supabase
