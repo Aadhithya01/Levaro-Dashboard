@@ -41,8 +41,13 @@ export default function Products() {
 
   useEffect(() => { fetchData() }, [categoryId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const totalStock = products.reduce((sum, p) => sum + computeSummary(p).stock, 0)
-  const totalProfit = products.reduce((sum, p) => sum + computeSummary(p).profit, 0)
+  const { totalStock, totalProfit } = products.reduce(
+    (acc, p) => {
+      const { stock, profit } = computeSummary(p)
+      return { totalStock: acc.totalStock + stock, totalProfit: acc.totalProfit + profit }
+    },
+    { totalStock: 0, totalProfit: 0 }
+  )
 
   return (
     <div className="min-h-screen bg-brand-cream">
