@@ -1,18 +1,18 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import ProfileDropdown from './ProfileDropdown'
 
 export default function Navbar() {
-  const { logout } = useAuth()
-  const navigate = useNavigate()
+  const { user } = useAuth()
   const { pathname } = useLocation()
-
-  async function handleLogout() {
-    await logout()
-    navigate('/login')
-  }
+  const [showProfile, setShowProfile] = useState(false)
 
   const catActive = pathname === '/' || pathname.startsWith('/categories') || pathname.startsWith('/products')
   const dashActive = pathname.startsWith('/dashboard')
+
+  const avatarUrl = user?.user_metadata?.avatar_url
+  const initials = user?.email?.[0]?.toUpperCase() ?? '?'
 
   return (
     <nav className="bg-brand-green px-6 py-3 flex items-center justify-between">
@@ -31,9 +31,19 @@ export default function Navbar() {
           Dashboard
         </Link>
       </div>
-      <button onClick={handleLogout} className="text-sm text-brand-gold/50 hover:text-brand-gold/80">
-        Logout
-      </button>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setShowProfile(v => !v)}
+          className="w-8 h-8 rounded-full bg-brand-gold/20 hover:bg-brand-gold/30 flex items-center justify-center overflow-hidden transition-colors"
+        >
+          {avatarUrl
+            ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+            : <span className="text-brand-gold font-bold text-sm">{initials}</span>
+          }
+        </button>
+        {showProfile && <ProfileDropdown onClose={() => setShowProfile(false)} />}
+      </div>
     </nav>
   )
 }
