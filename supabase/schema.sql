@@ -52,3 +52,21 @@ ALTER TABLE products ADD COLUMN category_id uuid REFERENCES categories(id) ON DE
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "authenticated users can do everything on categories"
   ON categories FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Migration: add_image_urls_and_storage_buckets (2026-05-27)
+ALTER TABLE categories ADD COLUMN image_url text;
+ALTER TABLE products ADD COLUMN image_url text;
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES
+  ('category-images', 'category-images', true),
+  ('product-images',  'product-images',  true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "authenticated users can upload category images"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'category-images');
+
+CREATE POLICY "authenticated users can upload product images"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'product-images');
