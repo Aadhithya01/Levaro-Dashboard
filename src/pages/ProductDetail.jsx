@@ -49,6 +49,7 @@ export default function ProductDetail() {
             src={product.image_url}
             alt={product.name}
             className="w-full h-48 object-cover rounded-lg mb-4"
+            onError={e => { e.currentTarget.style.display = 'none' }}
           />
         )}
         <h1 className="text-xl font-bold text-brand-green mb-2">{product.name}</h1>
