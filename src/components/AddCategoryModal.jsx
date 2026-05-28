@@ -12,6 +12,9 @@ export default function AddCategoryModal({ onClose, onAdded }) {
   function handleImageChange(e) {
     const file = e.target.files[0]
     if (!file) return
+    if (!file.type.startsWith('image/')) { setError('Please select an image file.'); return }
+    if (file.size > 5 * 1024 * 1024) { setError('Image must be under 5 MB.'); return }
+    setError('')
     setImageFile(file)
     setImagePreview(URL.createObjectURL(file))
   }
@@ -22,14 +25,15 @@ export default function AddCategoryModal({ onClose, onAdded }) {
     setError('')
 
     let image_url = null
+    let uploadedPath = null
     if (imageFile) {
       const ext = imageFile.name.split('.').pop()
-      const path = `${crypto.randomUUID()}.${ext}`
+      uploadedPath = `${crypto.randomUUID()}.${ext}`
       const { error: uploadError } = await supabase.storage
         .from('category-images')
-        .upload(path, imageFile)
+        .upload(uploadedPath, imageFile)
       if (uploadError) { setError(uploadError.message); setLoading(false); return }
-      const { data } = supabase.storage.from('category-images').getPublicUrl(path)
+      const { data } = supabase.storage.from('category-images').getPublicUrl(uploadedPath)
       image_url = data.publicUrl
     }
 
@@ -37,7 +41,12 @@ export default function AddCategoryModal({ onClose, onAdded }) {
       .from('categories')
       .insert({ name: name.trim(), ...(image_url && { image_url }) })
     setLoading(false)
-    if (insertError) { setError(insertError.message); return }
+    if (insertError) {
+      if (uploadedPath) await supabase.storage.from('category-images').remove([uploadedPath])
+      setError(insertError.message)
+      return
+    }
+    if (imagePreview) URL.revokeObjectURL(imagePreview)
     onAdded()
     onClose()
   }
@@ -74,7 +83,11 @@ export default function AddCategoryModal({ onClose, onAdded }) {
                 <img src={imagePreview} alt="preview" className="w-16 h-16 object-cover rounded-lg border border-brand-border" />
                 <button
                   type="button"
-                  onClick={() => { setImageFile(null); setImagePreview(null) }}
+                  onClick={() => {
+                    URL.revokeObjectURL(imagePreview)
+                    setImageFile(null)
+                    setImagePreview(null)
+                  }}
                   className="text-xs text-red-500 hover:text-red-700"
                 >
                   Remove
