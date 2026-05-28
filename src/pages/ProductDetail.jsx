@@ -56,14 +56,14 @@ export default function ProductDetail() {
 
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Stock', value: `${stock} units` },
-            { label: 'Total Cost', value: `₹${totalCost.toFixed(2)}` },
-            { label: 'Total Revenue', value: `₹${totalRevenue.toFixed(2)}` },
-            { label: 'Profit', value: `₹${profit.toFixed(2)}`, color: profit >= 0 ? 'text-brand-green' : 'text-red-500' },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="bg-white rounded-lg border border-brand-border p-4">
+            { label: 'Stock', value: `${stock} units`, bg: 'bg-brand-green/5 border-brand-green/20', color: 'text-brand-green' },
+            { label: 'Total Cost', value: `₹${totalCost.toFixed(2)}`, bg: 'bg-white border-brand-border', color: 'text-gray-800' },
+            { label: 'Total Revenue', value: `₹${totalRevenue.toFixed(2)}`, bg: 'bg-brand-gold/10 border-brand-gold/20', color: 'text-gray-800' },
+            { label: 'Profit', value: `₹${profit.toFixed(2)}`, bg: profit >= 0 ? 'bg-brand-green/5 border-brand-green/20' : 'bg-red-50 border-red-200', color: profit >= 0 ? 'text-brand-green' : 'text-red-500' },
+          ].map(({ label, value, bg, color }) => (
+            <div key={label} className={`rounded-lg border p-4 ${bg}`}>
               <p className="text-xs text-gray-400 mb-1">{label}</p>
-              <p className={`text-lg font-semibold ${color ?? 'text-gray-800'}`}>{value}</p>
+              <p className={`text-lg font-semibold ${color}`}>{value}</p>
             </div>
           ))}
         </div>
