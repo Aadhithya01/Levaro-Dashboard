@@ -12,6 +12,9 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
   function handleImageChange(e) {
     const file = e.target.files[0]
     if (!file) return
+    if (!file.type.startsWith('image/')) { setError('Please select an image file.'); return }
+    if (file.size > 5 * 1024 * 1024) { setError('Image must be under 5 MB.'); return }
+    setError('')
     setImageFile(file)
     setImagePreview(URL.createObjectURL(file))
   }
