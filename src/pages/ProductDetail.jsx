@@ -44,6 +44,13 @@ export default function ProductDetail() {
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-8">
         <button onClick={() => navigate(-1)} className="text-sm text-brand-green hover:underline mb-4 block">← Back</button>
+        {product.image_url && (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            className="w-full h-48 object-cover rounded-lg mb-4"
+          />
+        )}
         <h1 className="text-xl font-bold text-brand-green mb-2">{product.name}</h1>
 
         <div className="grid grid-cols-4 gap-4 mb-8">
