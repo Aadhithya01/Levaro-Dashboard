@@ -44,7 +44,19 @@ export default function Categories() {
           <div className="grid grid-cols-3 gap-4">
             {categories.map(cat => {
               const count = cat.products?.[0]?.count ?? 0
-              return (
+              return cat.image_url ? (
+                <div
+                  key={cat.id}
+                  onClick={() => navigate(`/categories/${cat.id}`)}
+                  className="relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-brand-green transition-all shadow-sm"
+                >
+                  <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                    <p className="font-bold text-white text-sm">{cat.name}</p>
+                    <p className="text-xs text-brand-gold mt-0.5">{count} product{count !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+              ) : (
                 <div
                   key={cat.id}
                   onClick={() => navigate(`/categories/${cat.id}`)}
