@@ -48,6 +48,10 @@ export default function EditCategoryModal({ category, onClose, onUpdated }) {
       setError(updateError.message)
       return
     }
+    if (imageFile && category.image_url) {
+      const oldPath = category.image_url.split('/category-images/')[1]
+      if (oldPath) await supabase.storage.from('category-images').remove([oldPath])
+    }
     if (imagePreview) URL.revokeObjectURL(imagePreview)
     onUpdated()
     onClose()

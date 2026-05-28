@@ -48,6 +48,10 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
       setError(updateError.message)
       return
     }
+    if (imageFile && product.image_url) {
+      const oldPath = product.image_url.split('/product-images/')[1]
+      if (oldPath) await supabase.storage.from('product-images').remove([oldPath])
+    }
     if (imagePreview) URL.revokeObjectURL(imagePreview)
     onUpdated()
     onClose()
