@@ -147,3 +147,8 @@ INSERT INTO ledger_members (name, email) VALUES
   ('Thivya', 'yuvarajthivyaa@gmail.com'),
   ('Giri', 'giriarasank@gmail.com')
 ON CONFLICT (email) DO NOTHING;
+
+-- Migration: add_ledger_indexes_and_constraints (2026-05-30)
+CREATE INDEX ON ledger_splits(expense_id);
+CREATE INDEX ON ledger_splits(member_id);
+ALTER TABLE ledger_settlements ADD CONSTRAINT settlements_different_members CHECK (from_member <> to_member);
