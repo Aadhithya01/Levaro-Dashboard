@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import ProfileDropdown from './ProfileDropdown'
+import NavBalance from './NavBalance'
 
 export default function Navbar() {
   const { user } = useAuth()
@@ -10,6 +11,8 @@ export default function Navbar() {
 
   const catActive = pathname === '/' || pathname.startsWith('/categories') || pathname.startsWith('/products')
   const dashActive = pathname.startsWith('/dashboard')
+  const ledgerActive = pathname.startsWith('/ledger')
+  const tasksActive = pathname.startsWith('/tasks')
 
   const avatarUrl = user?.user_metadata?.avatar_url
   const initials = user?.email?.[0]?.toUpperCase() ?? '?'
@@ -30,19 +33,34 @@ export default function Navbar() {
         >
           Dashboard
         </Link>
-      </div>
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setShowProfile(v => !v)}
-          className="w-8 h-8 rounded-full bg-brand-gold/20 hover:bg-brand-gold/30 flex items-center justify-center overflow-hidden transition-colors"
+        <Link
+          to="/ledger"
+          className={`text-sm transition-colors ${ledgerActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
         >
-          {avatarUrl
-            ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-            : <span className="text-brand-gold font-bold text-sm">{initials}</span>
-          }
-        </button>
-        {showProfile && <ProfileDropdown onClose={() => setShowProfile(false)} />}
+          Ledger
+        </Link>
+        <Link
+          to="/tasks"
+          className={`text-sm transition-colors ${tasksActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
+        >
+          Tasks
+        </Link>
+      </div>
+      <div className="flex items-center gap-3">
+        <NavBalance />
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowProfile(v => !v)}
+            className="w-8 h-8 rounded-full bg-brand-gold/20 hover:bg-brand-gold/30 flex items-center justify-center overflow-hidden transition-colors"
+          >
+            {avatarUrl
+              ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+              : <span className="text-brand-gold font-bold text-sm">{initials}</span>
+            }
+          </button>
+          {showProfile && <ProfileDropdown onClose={() => setShowProfile(false)} />}
+        </div>
       </div>
     </nav>
   )

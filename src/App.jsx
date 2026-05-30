@@ -5,6 +5,8 @@ import Categories from './pages/Categories'
 import Products from './pages/Products'
 import ProductDetail from './pages/ProductDetail'
 import Dashboard from './pages/Dashboard'
+import Ledger from './pages/Ledger'
+import Tasks from './pages/Tasks'
 
 export default function App() {
   return (
@@ -14,6 +16,8 @@ export default function App() {
       <Route path="/categories/:categoryId" element={<ProtectedRoute><Products /></ProtectedRoute>} />
       <Route path="/products/:id" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
+      <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
