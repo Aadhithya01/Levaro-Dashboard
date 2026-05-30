@@ -7,7 +7,7 @@ export default {
         brand: {
           green: '#1a5c45',
           gold: '#e8c96a',
-          cream: '#faf7f0',
+          cream: '#fef6d0',
           border: '#e8e0d0',
         },
       },

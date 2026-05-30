@@ -80,7 +80,7 @@ export default function Tasks() {
   const done = tasks.filter(t => t.status === 'done')
 
   return (
-    <div className="min-h-screen bg-brand-cream">
+    <div className="min-h-screen">
       <Navbar />
       <div className="max-w-3xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">

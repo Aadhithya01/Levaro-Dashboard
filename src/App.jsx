@@ -7,11 +7,13 @@ import ProductDetail from './pages/ProductDetail'
 import Dashboard from './pages/Dashboard'
 import Ledger from './pages/Ledger'
 import Tasks from './pages/Tasks'
+import Welcome from './pages/Welcome'
 
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
       <Route path="/" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
       <Route path="/categories/:categoryId" element={<ProtectedRoute><Products /></ProtectedRoute>} />
       <Route path="/products/:id" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />

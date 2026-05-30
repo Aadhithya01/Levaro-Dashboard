@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 export default function DeleteProductModal({ product, onClose, onDeleted }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [deleted, setDeleted] = useState(false)
 
   const hasData = product.purchases.length > 0 || product.sales.length > 0
 
@@ -22,9 +23,19 @@ export default function DeleteProductModal({ product, onClose, onDeleted }) {
       if (path) await supabase.storage.from('product-images').remove([path])
     }
 
+    setDeleted(true)
     onDeleted()
-    onClose()
+    setTimeout(() => onClose(), 2500)
   }
+
+  if (deleted) return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-2xl w-64 text-center">
+        <img src="/deleted.jpg" alt="" className="w-full object-cover" />
+        <p className="text-brand-green font-bold py-3 tracking-widest text-sm uppercase">Deleted!</p>
+      </div>
+    </div>
+  )
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

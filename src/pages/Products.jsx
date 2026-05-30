@@ -64,7 +64,7 @@ export default function Products() {
   )
 
   return (
-    <div className="min-h-screen bg-brand-cream">
+    <div className="min-h-screen">
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-8">
         <button onClick={() => navigate('/')} className="text-sm text-brand-green hover:underline mb-4 block">

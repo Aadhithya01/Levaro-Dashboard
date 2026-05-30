@@ -29,8 +29,8 @@ export default function ProductDetail() {
 
   useEffect(() => { fetchData() }, [id])
 
-  if (loading) return <div className="min-h-screen bg-brand-cream"><Navbar /><p className="p-8 text-gray-500 text-sm">Loading...</p></div>
-  if (!product) return <div className="min-h-screen bg-brand-cream"><Navbar /><p className="p-8 text-gray-500 text-sm">Product not found.</p></div>
+  if (loading) return <div className="min-h-screen"><Navbar /><p className="p-8 text-gray-500 text-sm">Loading...</p></div>
+  if (!product) return <div className="min-h-screen"><Navbar /><p className="p-8 text-gray-500 text-sm">Product not found.</p></div>
 
   const totalCost = purchases.reduce((sum, p) => sum + p.quantity * p.price_per_piece, 0)
   const totalPurchasedQty = purchases.reduce((sum, p) => sum + p.quantity, 0)
@@ -40,7 +40,7 @@ export default function ProductDetail() {
   const profit = totalRevenue - totalCost
 
   return (
-    <div className="min-h-screen bg-brand-cream">
+    <div className="min-h-screen">
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-8">
         <button onClick={() => navigate(-1)} className="text-sm text-brand-green hover:underline mb-4 block">← Back</button>

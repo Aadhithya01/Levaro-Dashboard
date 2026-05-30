@@ -34,12 +34,14 @@ export default function Dashboard() {
     fetchAll()
   }, [])
 
-  const stockData = products.map(p => ({
+  const activeProducts = products.filter(p => p.purchases.length > 0 || p.sales.length > 0)
+
+  const stockData = activeProducts.map(p => ({
     name: p.name,
     stock: p.purchases.reduce((s, x) => s + x.quantity, 0) - p.sales.reduce((s, x) => s + x.quantity_sold, 0),
   }))
 
-  const profitData = products.map(p => ({
+  const profitData = activeProducts.map(p => ({
     name: p.name,
     profit: parseFloat((
       p.sales.reduce((s, x) => s + x.quantity_sold * x.selling_price, 0) -
@@ -56,10 +58,10 @@ export default function Dashboard() {
     sum + p.purchases.reduce((s, x) => s + x.quantity, 0)
     - p.sales.reduce((s, x) => s + x.quantity_sold, 0), 0)
 
-  if (loading) return <div className="min-h-screen bg-brand-cream"><Navbar /><p className="p-8 text-gray-500 text-sm">Loading...</p></div>
+  if (loading) return <div className="min-h-screen"><Navbar /><p className="p-8 text-gray-500 text-sm">Loading...</p></div>
 
   return (
-    <div className="min-h-screen bg-brand-cream">
+    <div className="min-h-screen">
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-10">
         <h1 className="text-xl font-bold text-brand-green">Dashboard</h1>

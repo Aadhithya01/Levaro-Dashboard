@@ -7,6 +7,7 @@ export default function AddCategoryModal({ onClose, onAdded }) {
   const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [created, setCreated] = useState(false)
   const fileInputRef = useRef(null)
 
   function handleImageChange(e) {
@@ -48,8 +49,18 @@ export default function AddCategoryModal({ onClose, onAdded }) {
     }
     if (imagePreview) URL.revokeObjectURL(imagePreview)
     onAdded()
-    onClose()
+    setCreated(true)
+    setTimeout(() => onClose(), 2500)
   }
+
+  if (created) return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-2xl w-72 text-center">
+        <img src="/created.jpg" alt="" className="w-full object-cover" />
+        <p className="text-brand-green font-bold py-3 tracking-widest text-sm uppercase">Vaalthukkal! 🎉</p>
+      </div>
+    </div>
+  )
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
