@@ -47,6 +47,15 @@ export default function Dashboard() {
     ).toFixed(2)),
   }))
 
+  const totalRevenue = products.reduce((sum, p) =>
+    sum + p.sales.reduce((s, x) => s + x.quantity_sold * x.selling_price, 0), 0)
+  const totalCost = products.reduce((sum, p) =>
+    sum + p.purchases.reduce((s, x) => s + x.quantity * x.price_per_piece, 0), 0)
+  const totalProfit = totalRevenue - totalCost
+  const totalStock = products.reduce((sum, p) =>
+    sum + p.purchases.reduce((s, x) => s + x.quantity, 0)
+    - p.sales.reduce((s, x) => s + x.quantity_sold, 0), 0)
+
   if (loading) return <div className="min-h-screen bg-brand-cream"><Navbar /><p className="p-8 text-gray-500 text-sm">Loading...</p></div>
 
   return (
@@ -54,6 +63,40 @@ export default function Dashboard() {
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-10">
         <h1 className="text-xl font-bold text-brand-green">Dashboard</h1>
+
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            {
+              label: 'Total Revenue',
+              value: `₹${totalRevenue.toFixed(2)}`,
+              bg: 'bg-brand-gold/10 border-brand-gold/20',
+              color: 'text-gray-800',
+            },
+            {
+              label: 'Total Cost',
+              value: `₹${totalCost.toFixed(2)}`,
+              bg: 'bg-white border-brand-border',
+              color: 'text-gray-800',
+            },
+            {
+              label: 'Total Profit',
+              value: `₹${totalProfit.toFixed(2)}`,
+              bg: totalProfit >= 0 ? 'bg-brand-green/5 border-brand-green/20' : 'bg-red-50 border-red-200',
+              color: totalProfit >= 0 ? 'text-brand-green' : 'text-red-500',
+            },
+            {
+              label: 'Items in Stock',
+              value: totalStock,
+              bg: 'bg-brand-green/5 border-brand-green/20',
+              color: 'text-brand-green',
+            },
+          ].map(({ label, value, bg, color }) => (
+            <div key={label} className={`rounded-lg border ${bg} px-4 py-3`}>
+              <p className="text-xs text-gray-400 font-medium mb-1">{label}</p>
+              <p className={`text-xl font-bold ${color}`}>{value}</p>
+            </div>
+          ))}
+        </div>
 
         <div>
           <h2 className="text-xs font-semibold text-brand-green mb-3 uppercase tracking-widest">Stock Levels</h2>
