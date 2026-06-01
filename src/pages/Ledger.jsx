@@ -1,17 +1,35 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import Navbar from '../components/Navbar'
 import { netBetween } from '../lib/ledgerUtils'
 import AddExpenseModal from '../components/AddExpenseModal'
 import SettleUpModal from '../components/SettleUpModal'
+import EditExpenseModal from '../components/EditExpenseModal'
+import EditSettlementModal from '../components/EditSettlementModal'
+
+const PencilIcon = () => (
+  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+  </svg>
+)
+
+const TrashIcon = () => (
+  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+)
 
 export default function Ledger() {
+  const { user } = useAuth()
   const [members, setMembers] = useState([])
   const [expenses, setExpenses] = useState([])
   const [settlements, setSettlements] = useState([])
   const [loading, setLoading] = useState(true)
   const [showExpense, setShowExpense] = useState(false)
   const [showSettle, setShowSettle] = useState(false)
+  const [editingExpense, setEditingExpense] = useState(null)
+  const [editingSettlement, setEditingSettlement] = useState(null)
 
   async function fetchAll() {
     const [{ data: m }, { data: e }, { data: s }] = await Promise.all([
@@ -28,6 +46,7 @@ export default function Ledger() {
   useEffect(() => { fetchAll() }, [])
 
   const memberMap = Object.fromEntries(members.map(m => [m.id, m]))
+  const me = members.find(m => m.email === user?.email)
 
   const aadhithya = members.find(m => m.email === 'aadhithyaraja180@gmail.com')
   const thivya = members.find(m => m.email === 'yuvarajthivyaa@gmail.com')
@@ -42,6 +61,49 @@ export default function Ledger() {
     ...expenses.map(e => ({ ...e, _type: 'expense', _ts: e.created_at })),
     ...settlements.map(s => ({ ...s, _type: 'settlement', _ts: s.created_at })),
   ].sort((a, b) => b._ts.localeCompare(a._ts))
+
+  function pairColors(a, b, net) {
+    const settled = Math.abs(net) < 0.01
+    if (settled) return { settled: true, border: 'border-brand-border', amount: '' }
+    if (!me) return { settled: false, border: 'border-red-200', amount: 'text-red-500' }
+    const iAmA = me.id === a.id
+    const iAmB = me.id === b.id
+    // net > 0 means A owes B
+    const iOwe = (iAmA && net > 0) || (iAmB && net < 0)
+    if (iAmA || iAmB) {
+      return iOwe
+        ? { settled: false, border: 'border-red-200', amount: 'text-red-500' }
+        : { settled: false, border: 'border-green-200', amount: 'text-green-600' }
+    }
+    return { settled: false, border: 'border-red-200', amount: 'text-red-500' }
+  }
+
+  function expenseAmountColor(item) {
+    if (!me) return 'text-gray-800'
+    if (item.paid_by === me.id) return 'text-green-600'
+    if ((item.ledger_splits ?? []).some(s => s.member_id === me.id)) return 'text-red-500'
+    return 'text-gray-800'
+  }
+
+  function settlementAmountColor(item) {
+    if (!me) return 'text-green-600'
+    if (item.to_member === me.id) return 'text-green-600'
+    if (item.from_member === me.id) return 'text-red-500'
+    return 'text-gray-500'
+  }
+
+  async function deleteExpense(item) {
+    if (!window.confirm(`Delete "${item.description}"?`)) return
+    await supabase.from('ledger_splits').delete().eq('expense_id', item.id)
+    await supabase.from('ledger_expenses').delete().eq('id', item.id)
+    fetchAll()
+  }
+
+  async function deleteSettlement(item) {
+    if (!window.confirm('Delete this settlement?')) return
+    await supabase.from('ledger_settlements').delete().eq('id', item.id)
+    fetchAll()
+  }
 
   return (
     <div className="min-h-screen">
@@ -72,21 +134,18 @@ export default function Ledger() {
             <div className="grid grid-cols-3 gap-4 mb-8">
               {pairs.map(({ a, b }) => {
                 const net = netBetween(a.id, b.id, expenses, settlements)
-                const settled = Math.abs(net) < 0.01
+                const { settled, border, amount: amountColor } = pairColors(a, b, net)
                 const debtor = net > 0 ? a : b
                 const creditor = net > 0 ? b : a
                 return (
-                  <div
-                    key={`${a.id}-${b.id}`}
-                    className={`bg-white rounded-xl border p-4 ${settled ? 'border-brand-border' : 'border-red-200'}`}
-                  >
+                  <div key={`${a.id}-${b.id}`} className={`bg-white rounded-xl border p-4 ${border}`}>
                     <p className="text-xs text-gray-400 font-medium mb-2">{a.name} · {b.name}</p>
                     {settled ? (
                       <p className="text-brand-green font-semibold text-sm">Settled ✓</p>
                     ) : (
                       <>
                         <p className="text-xs text-gray-500">{debtor.name} owes</p>
-                        <p className="text-lg font-bold text-red-500">₹{Math.abs(net).toFixed(2)}</p>
+                        <p className={`text-lg font-bold ${amountColor}`}>₹{Math.abs(net).toFixed(2)}</p>
                         <p className="text-xs text-gray-400">to {creditor.name}</p>
                       </>
                     )}
@@ -100,9 +159,10 @@ export default function Ledger() {
             ) : (
               <div className="space-y-2">
                 <h2 className="text-xs font-semibold text-brand-green uppercase tracking-widest mb-3">Activity</h2>
-                {feed.map(item =>
-                  item._type === 'expense' ? (
-                    <div key={item.id} className="bg-white rounded-lg border border-brand-border px-4 py-3 flex items-center gap-3">
+                {feed.map(item => {
+                  const isOwner = item.created_by === user?.id
+                  return item._type === 'expense' ? (
+                    <div key={item.id} className="group bg-white rounded-lg border border-brand-border px-4 py-3 flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-brand-green/10 flex items-center justify-center flex-shrink-0">
                         <span className="text-brand-green text-xs font-bold">₹</span>
                       </div>
@@ -113,12 +173,30 @@ export default function Ledger() {
                         </p>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-semibold text-gray-800">₹{parseFloat(item.amount).toFixed(2)}</p>
+                        <p className={`text-sm font-semibold ${expenseAmountColor(item)}`}>₹{parseFloat(item.amount).toFixed(2)}</p>
                         <p className="text-xs text-gray-400">{item.created_at?.slice(0, 10)}</p>
                       </div>
+                      {isOwner && (
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setEditingExpense(item)}
+                            className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-brand-green"
+                          >
+                            <PencilIcon />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteExpense(item)}
+                            className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <div key={item.id} className="bg-white rounded-lg border border-brand-border px-4 py-3 flex items-center gap-3">
+                    <div key={item.id} className="group bg-white rounded-lg border border-brand-border px-4 py-3 flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -131,12 +209,30 @@ export default function Ledger() {
                         {item.note && <p className="text-xs text-gray-400">{item.note}</p>}
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-semibold text-green-600">₹{parseFloat(item.amount).toFixed(2)}</p>
+                        <p className={`text-sm font-semibold ${settlementAmountColor(item)}`}>₹{parseFloat(item.amount).toFixed(2)}</p>
                         <p className="text-xs text-gray-400">{item.created_at?.slice(0, 10)}</p>
                       </div>
+                      {isOwner && (
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setEditingSettlement(item)}
+                            className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-brand-green"
+                          >
+                            <PencilIcon />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteSettlement(item)}
+                            className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )
-                )}
+                })}
               </div>
             )}
           </>
@@ -148,6 +244,22 @@ export default function Ledger() {
       )}
       {showSettle && (
         <SettleUpModal members={members} onClose={() => setShowSettle(false)} onAdded={fetchAll} />
+      )}
+      {editingExpense && (
+        <EditExpenseModal
+          expense={editingExpense}
+          members={members}
+          onClose={() => setEditingExpense(null)}
+          onUpdated={fetchAll}
+        />
+      )}
+      {editingSettlement && (
+        <EditSettlementModal
+          settlement={editingSettlement}
+          members={members}
+          onClose={() => setEditingSettlement(null)}
+          onUpdated={fetchAll}
+        />
       )}
     </div>
   )

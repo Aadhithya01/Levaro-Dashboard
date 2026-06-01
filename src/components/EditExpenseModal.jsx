@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../contexts/AuthContext'
 
-export default function AddExpenseModal({ members, onClose, onAdded }) {
-  const { user } = useAuth()
-  const [description, setDescription] = useState('')
-  const [amount, setAmount] = useState('')
-  const [paidBy, setPaidBy] = useState(members[0]?.id ?? '')
-  const [splitWith, setSplitWith] = useState(members.map(m => m.id))
+export default function EditExpenseModal({ expense, members, onClose, onUpdated }) {
+  const [description, setDescription] = useState(expense.description)
+  const [amount, setAmount] = useState(String(expense.amount))
+  const [paidBy, setPaidBy] = useState(expense.paid_by)
+  const [splitWith, setSplitWith] = useState([
+    expense.paid_by,
+    ...(expense.ledger_splits ?? []).map(s => s.member_id),
+  ])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -27,23 +28,28 @@ export default function AddExpenseModal({ members, onClose, onAdded }) {
     setLoading(true)
     setError('')
 
-    const { data: exp, error: expError } = await supabase
+    const { error: updateError } = await supabase
       .from('ledger_expenses')
-      .insert({ description: description.trim(), amount: amt, paid_by: paidBy, created_by: user?.id })
-      .select()
-      .single()
-    if (expError) { setError(expError.message); setLoading(false); return }
+      .update({ description: description.trim(), amount: amt, paid_by: paidBy })
+      .eq('id', expense.id)
+    if (updateError) { setError(updateError.message); setLoading(false); return }
+
+    const { error: deleteError } = await supabase
+      .from('ledger_splits')
+      .delete()
+      .eq('expense_id', expense.id)
+    if (deleteError) { setError(deleteError.message); setLoading(false); return }
 
     const share = parseFloat((amt / splitWith.length).toFixed(2))
     const nonPayers = splitWith.filter(id => id !== paidBy)
     if (nonPayers.length > 0) {
       const { error: splitError } = await supabase
         .from('ledger_splits')
-        .insert(nonPayers.map(memberId => ({ expense_id: exp.id, member_id: memberId, amount: share })))
+        .insert(nonPayers.map(memberId => ({ expense_id: expense.id, member_id: memberId, amount: share })))
       if (splitError) { setError(splitError.message); setLoading(false); return }
     }
 
-    onAdded()
+    onUpdated()
     onClose()
   }
 
@@ -55,7 +61,7 @@ export default function AddExpenseModal({ members, onClose, onAdded }) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">Add Expense</h2>
+        <h2 className="text-base font-semibold text-gray-800 mb-4">Edit Expense</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
@@ -63,7 +69,6 @@ export default function AddExpenseModal({ members, onClose, onAdded }) {
               type="text"
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="e.g. Dinner"
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/30"
             />
           </div>
@@ -73,7 +78,6 @@ export default function AddExpenseModal({ members, onClose, onAdded }) {
               type="number"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              placeholder="0.00"
               min="0.01"
               step="0.01"
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/30"
@@ -121,7 +125,7 @@ export default function AddExpenseModal({ members, onClose, onAdded }) {
               disabled={loading}
               className="px-4 py-2 text-sm bg-brand-green text-brand-gold rounded font-semibold hover:opacity-90 disabled:opacity-40"
             >
-              {loading ? 'Adding...' : 'Add Expense'}
+              {loading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

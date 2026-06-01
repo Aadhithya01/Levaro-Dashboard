@@ -3,11 +3,11 @@ import { supabase } from '../lib/supabase'
 
 export default function AddCategoryModal({ onClose, onAdded }) {
   const [name, setName] = useState('')
+  const [code, setCode] = useState('')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [created, setCreated] = useState(false)
   const fileInputRef = useRef(null)
 
   function handleImageChange(e) {
@@ -40,7 +40,7 @@ export default function AddCategoryModal({ onClose, onAdded }) {
 
     const { error: insertError } = await supabase
       .from('categories')
-      .insert({ name: name.trim(), ...(image_url && { image_url }) })
+      .insert({ name: name.trim(), ...(code.trim() && { code: code.trim() }), ...(image_url && { image_url }) })
     setLoading(false)
     if (insertError) {
       if (uploadedPath) await supabase.storage.from('category-images').remove([uploadedPath])
@@ -49,18 +49,8 @@ export default function AddCategoryModal({ onClose, onAdded }) {
     }
     if (imagePreview) URL.revokeObjectURL(imagePreview)
     onAdded()
-    setCreated(true)
-    setTimeout(() => onClose(), 2500)
+    onClose()
   }
-
-  if (created) return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl overflow-hidden shadow-2xl w-72 text-center">
-        <img src="/created.jpg" alt="" className="w-full object-cover" />
-        <p className="text-brand-green font-bold py-3 tracking-widest text-sm uppercase">Vaalthukkal! 🎉</p>
-      </div>
-    </div>
-  )
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -76,6 +66,18 @@ export default function AddCategoryModal({ onClose, onAdded }) {
               onChange={e => setName(e.target.value)}
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
               placeholder="e.g. Kada"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Code <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={code}
+              onChange={e => setCode(e.target.value)}
+              className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
+              placeholder="e.g. KAD-01"
             />
           </div>
           <div>

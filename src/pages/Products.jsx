@@ -138,6 +138,7 @@ export default function Products() {
                   )}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
                     <p className="font-bold text-white text-sm truncate">{product.name}</p>
+                    {product.code && <p className="text-xs text-white/50 font-mono truncate">{product.code}</p>}
                     <div className="flex justify-between mt-0.5">
                       <span className="text-xs text-white/70">{stock} left</span>
                       <span className={`text-xs font-semibold ${profit >= 0 ? 'text-brand-gold' : 'text-red-400'}`}>

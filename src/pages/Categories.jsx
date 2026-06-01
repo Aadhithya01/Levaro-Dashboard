@@ -98,7 +98,10 @@ export default function Categories() {
                   <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
                     <p className="font-bold text-white text-sm">{cat.name}</p>
-                    <p className="text-xs text-brand-gold mt-0.5">{count} product{count !== 1 ? 's' : ''}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-xs text-brand-gold">{count} product{count !== 1 ? 's' : ''}</p>
+                      {cat.code && <span className="text-xs text-white/50">· {cat.code}</span>}
+                    </div>
                   </div>
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     <button
@@ -129,6 +132,7 @@ export default function Categories() {
                     </span>
                   </div>
                   <p className="font-semibold text-gray-800 text-sm">{cat.name}</p>
+                  {cat.code && <p className="text-xs text-brand-green/60 font-mono mt-0.5">{cat.code}</p>}
                   <p className="text-xs text-gray-400 mt-1">{count} product{count !== 1 ? 's' : ''}</p>
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     <button

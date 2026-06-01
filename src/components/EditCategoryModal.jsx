@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 
 export default function EditCategoryModal({ category, onClose, onUpdated }) {
   const [name, setName] = useState(category.name)
+  const [code, setCode] = useState(category.code ?? '')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -40,7 +41,7 @@ export default function EditCategoryModal({ category, onClose, onUpdated }) {
 
     const { error: updateError } = await supabase
       .from('categories')
-      .update({ name: name.trim(), image_url })
+      .update({ name: name.trim(), code: code.trim() || null, image_url })
       .eq('id', category.id)
     setLoading(false)
     if (updateError) {
@@ -72,6 +73,18 @@ export default function EditCategoryModal({ category, onClose, onUpdated }) {
               value={name}
               onChange={e => setName(e.target.value)}
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Code <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={code}
+              onChange={e => setCode(e.target.value)}
+              className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
+              placeholder="e.g. KAD-01"
             />
           </div>
           <div>

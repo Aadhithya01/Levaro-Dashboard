@@ -28,8 +28,13 @@ export default function NavBalance() {
   if (net === null || Math.abs(net) < 0.01) return null
   const isOwing = net > 0
   return (
-    <span className={`text-xs font-semibold tabular-nums ${isOwing ? 'text-red-300' : 'text-green-300'}`}>
-      {isOwing ? `-₹${Math.abs(net).toFixed(0)}` : `+₹${Math.abs(net).toFixed(0)}`}
-    </span>
+    <div className="flex flex-col items-end leading-none">
+      <span className={`text-[9px] font-semibold uppercase tracking-widest ${isOwing ? 'text-red-300/70' : 'text-emerald-300/70'}`}>
+        {isOwing ? 'you owe' : 'owed to you'}
+      </span>
+      <span className={`text-sm font-bold tabular-nums mt-0.5 ${isOwing ? 'text-red-300' : 'text-emerald-300'}`}>
+        ₹{Math.abs(net).toFixed(0)}
+      </span>
+    </div>
   )
 }

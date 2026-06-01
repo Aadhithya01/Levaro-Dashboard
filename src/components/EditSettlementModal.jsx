@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../contexts/AuthContext'
 
-export default function SettleUpModal({ members, onClose, onAdded }) {
-  const { user } = useAuth()
-  const [fromMember, setFromMember] = useState(members[0]?.id ?? '')
-  const [toMember, setToMember] = useState(members[1]?.id ?? '')
-  const [amount, setAmount] = useState('')
-  const [note, setNote] = useState('')
+export default function EditSettlementModal({ settlement, members, onClose, onUpdated }) {
+  const [fromMember, setFromMember] = useState(settlement.from_member)
+  const [toMember, setToMember] = useState(settlement.to_member)
+  const [amount, setAmount] = useState(String(settlement.amount))
+  const [note, setNote] = useState(settlement.note ?? '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -22,17 +20,18 @@ export default function SettleUpModal({ members, onClose, onAdded }) {
 
     const { error: err } = await supabase
       .from('ledger_settlements')
-      .insert({ from_member: fromMember, to_member: toMember, amount: amt, note: note.trim() || null, created_by: user?.id })
+      .update({ from_member: fromMember, to_member: toMember, amount: amt, note: note.trim() || null })
+      .eq('id', settlement.id)
     if (err) { setError(err.message); setLoading(false); return }
 
-    onAdded()
+    onUpdated()
     onClose()
   }
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">Settle Up</h2>
+        <h2 className="text-base font-semibold text-gray-800 mb-4">Edit Settlement</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
@@ -60,7 +59,6 @@ export default function SettleUpModal({ members, onClose, onAdded }) {
               type="number"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              placeholder="0.00"
               min="0.01"
               step="0.01"
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/30"
@@ -86,7 +84,7 @@ export default function SettleUpModal({ members, onClose, onAdded }) {
               disabled={loading}
               className="px-4 py-2 text-sm bg-brand-green text-brand-gold rounded font-semibold hover:opacity-90 disabled:opacity-40"
             >
-              {loading ? 'Saving...' : 'Settle Up'}
+              {loading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
