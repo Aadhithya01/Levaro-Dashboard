@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 export default function EditProductModal({ product, onClose, onUpdated }) {
   const [name, setName] = useState(product.name)
   const [code, setCode] = useState(product.code ?? '')
+  const [sellingPrice, setSellingPrice] = useState(product.selling_price != null ? String(product.selling_price) : '')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -41,7 +42,7 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
 
     const { error: updateError } = await supabase
       .from('products')
-      .update({ name: name.trim(), code: code.trim() || null, image_url })
+      .update({ name: name.trim(), code: code.trim() || null, selling_price: parseFloat(sellingPrice) || null, image_url })
       .eq('id', product.id)
     setLoading(false)
     if (updateError) {
@@ -85,6 +86,20 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
               onChange={e => setCode(e.target.value)}
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
               placeholder="e.g. GE-001"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Selling Price / Piece (₹) <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={sellingPrice}
+              onChange={e => setSellingPrice(e.target.value)}
+              className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
+              placeholder="e.g. 250"
             />
           </div>
           <div>

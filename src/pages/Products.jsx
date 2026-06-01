@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar'
 import AddProductModal from '../components/AddProductModal'
 import EditProductModal from '../components/EditProductModal'
 import DeleteProductModal from '../components/DeleteProductModal'
+import AddPurchaseModal from '../components/AddPurchaseModal'
 
 const PencilIcon = () => (
   <svg className="w-3.5 h-3.5 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -15,6 +16,12 @@ const PencilIcon = () => (
 const TrashIcon = () => (
   <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+)
+
+const StockIcon = () => (
+  <svg className="w-3.5 h-3.5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
   </svg>
 )
 
@@ -37,6 +44,7 @@ export default function Products() {
   const [showModal, setShowModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [deletingProduct, setDeletingProduct] = useState(null)
+  const [stockingProduct, setStockingProduct] = useState(null)
 
   async function fetchData() {
     const [{ data: cat }, { data: prods, error }] = await Promise.all([
@@ -149,6 +157,14 @@ export default function Products() {
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     <button
                       type="button"
+                      onClick={e => { e.stopPropagation(); setStockingProduct(product) }}
+                      className="bg-white/90 hover:bg-white rounded-full p-1.5"
+                      title="Add Stock"
+                    >
+                      <StockIcon />
+                    </button>
+                    <button
+                      type="button"
                       onClick={e => { e.stopPropagation(); setEditingProduct(product) }}
                       className="bg-white/90 hover:bg-white rounded-full p-1.5"
                     >
@@ -188,6 +204,13 @@ export default function Products() {
           product={deletingProduct}
           onClose={() => setDeletingProduct(null)}
           onDeleted={fetchData}
+        />
+      )}
+      {stockingProduct && (
+        <AddPurchaseModal
+          productId={stockingProduct.id}
+          onClose={() => setStockingProduct(null)}
+          onAdded={fetchData}
         />
       )}
     </div>

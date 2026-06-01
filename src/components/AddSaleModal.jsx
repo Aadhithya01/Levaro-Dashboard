@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-export default function AddSaleModal({ productId, onClose, onAdded }) {
-  const [form, setForm] = useState({ sale_date: '', quantity_sold: '', selling_price: '' })
+export default function AddSaleModal({ productId, defaultSellingPrice, onClose, onAdded }) {
+  const [form, setForm] = useState({ sale_date: '', quantity_sold: '', selling_price: defaultSellingPrice != null ? String(defaultSellingPrice) : '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 

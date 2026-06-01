@@ -52,7 +52,15 @@ export default function ProductDetail() {
             onError={e => { e.currentTarget.style.display = 'none' }}
           />
         )}
-        <h1 className="text-xl font-bold text-brand-green mb-2">{product.name}</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-xl font-bold text-brand-green">{product.name}</h1>
+          <button
+            onClick={() => setShowPurchase(true)}
+            className="text-sm bg-brand-green text-brand-gold px-3 py-1.5 rounded hover:opacity-90"
+          >
+            + Add Stock
+          </button>
+        </div>
 
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[
@@ -66,39 +74,6 @@ export default function ProductDetail() {
               <p className={`text-lg font-semibold ${color}`}>{value}</p>
             </div>
           ))}
-        </div>
-
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-brand-green">Purchases</h2>
-            <button onClick={() => setShowPurchase(true)} className="text-sm bg-brand-green text-brand-gold px-3 py-1.5 rounded hover:opacity-90">+ Add Purchase</button>
-          </div>
-          {purchases.length === 0 ? (
-            <p className="text-gray-400 text-sm">No purchases yet.</p>
-          ) : (
-            <div className="bg-white rounded-lg border border-brand-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-brand-green">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-brand-gold font-medium">Date</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Qty</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Price/Piece (₹)</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Total (₹)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-brand-border">
-                  {purchases.map(p => (
-                    <tr key={p.id} className="hover:bg-brand-cream">
-                      <td className="px-4 py-3 text-gray-700">{p.date_of_purchase}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">{p.quantity}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">₹{Number(p.price_per_piece).toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right font-medium text-gray-800">₹{(p.quantity * p.price_per_piece).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
 
         <div>
@@ -136,7 +111,7 @@ export default function ProductDetail() {
       </div>
 
       {showPurchase && <AddPurchaseModal productId={id} onClose={() => setShowPurchase(false)} onAdded={fetchData} />}
-      {showSale && <AddSaleModal productId={id} onClose={() => setShowSale(false)} onAdded={fetchData} />}
+      {showSale && <AddSaleModal productId={id} defaultSellingPrice={product.selling_price} onClose={() => setShowSale(false)} onAdded={fetchData} />}
     </div>
   )
 }

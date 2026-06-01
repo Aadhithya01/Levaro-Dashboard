@@ -6,6 +6,7 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
   const [code, setCode] = useState('')
   const [quantity, setQuantity] = useState('')
   const [price, setPrice] = useState('')
+  const [sellingPrice, setSellingPrice] = useState('')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -26,8 +27,10 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
     e.preventDefault()
     const qty = parseInt(quantity)
     const ppp = parseFloat(price)
+    const sp = parseFloat(sellingPrice)
     if (isNaN(qty) || qty < 1) { setError('Enter a valid quantity'); return }
     if (isNaN(ppp) || ppp <= 0) { setError('Enter a valid price'); return }
+    if (isNaN(sp) || sp <= 0) { setError('Enter a valid selling price'); return }
 
     setLoading(true)
     setError('')
@@ -47,7 +50,7 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
 
     const { data: product, error: insertError } = await supabase
       .from('products')
-      .insert({ name: name.trim(), category_id: categoryId, ...(code.trim() && { code: code.trim() }), ...(image_url && { image_url }) })
+      .insert({ name: name.trim(), category_id: categoryId, selling_price: sp, ...(code.trim() && { code: code.trim() }), ...(image_url && { image_url }) })
       .select()
       .single()
     if (insertError) {
@@ -111,7 +114,7 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price / Piece (₹)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Buy Price / Piece (₹)</label>
               <input
                 type="number"
                 required
@@ -123,6 +126,19 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
                 placeholder="e.g. 120"
               />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price / Piece (₹)</label>
+            <input
+              type="number"
+              required
+              min="0.01"
+              step="0.01"
+              value={sellingPrice}
+              onChange={e => setSellingPrice(e.target.value)}
+              className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
+              placeholder="e.g. 250"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
