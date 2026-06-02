@@ -9,7 +9,7 @@ export default function FloatingSuggestionButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-36 z-40 flex items-center gap-2 bg-brand-gold text-brand-green rounded-full px-4 py-2.5 shadow-lg hover:opacity-90 transition-opacity font-semibold text-sm"
+        className="fixed bottom-20 right-36 z-40 flex items-center gap-2 bg-brand-gold text-brand-green rounded-full px-4 py-2.5 shadow-lg hover:opacity-90 transition-opacity font-semibold text-sm"
       >
         <svg
           className="w-4 h-4"
