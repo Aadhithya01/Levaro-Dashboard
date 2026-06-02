@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import CustomerFooter from '../components/customer/CustomerFooter'
+import FloatingFeedbackButton from '../components/customer/FloatingFeedbackButton'
 
 export default function CustomerShop() {
   const [categories, setCategories] = useState([])
@@ -16,13 +18,13 @@ export default function CustomerShop() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-brand-cream">
+    <div className="min-h-screen bg-brand-cream flex flex-col">
       <div className="bg-brand-green px-6 py-5 text-center shadow-sm">
         <h1 className="text-2xl font-bold text-brand-gold tracking-[0.3em]">LEVARO</h1>
         <p className="text-brand-gold/50 text-[10px] tracking-[0.2em] uppercase mt-1">Timeless Style. Refined for You.</p>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="flex-1 max-w-5xl w-full mx-auto px-6 py-8">
         <p className="text-xs font-semibold text-brand-green uppercase tracking-widest mb-6">Our Collections</p>
 
         {loading ? (
@@ -62,6 +64,9 @@ export default function CustomerShop() {
           </div>
         )}
       </div>
+
+      <CustomerFooter />
+      <FloatingFeedbackButton />
     </div>
   )
 }
