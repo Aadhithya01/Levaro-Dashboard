@@ -20,7 +20,7 @@ export default function CustomerCategory() {
         supabase.from('categories').select('name').eq('id', categoryId).single(),
         supabase
           .from('products')
-          .select('id, name, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(count)')
+          .select('id, name, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(rating)')
           .eq('category_id', categoryId)
           .order('created_at', { ascending: false }),
       ])
@@ -63,7 +63,11 @@ export default function CustomerCategory() {
               const totalQty = (product.purchases ?? []).reduce((sum, p) => sum + p.quantity, 0)
               const soldQty = (product.sales ?? []).reduce((sum, s) => sum + s.quantity_sold, 0)
               const soldOut = totalQty - soldQty <= 0
-              const reviewCount = product.product_reviews?.[0]?.count ?? 0
+              const reviewRatings = product.product_reviews ?? []
+              const reviewCount = reviewRatings.length
+              const avgRating = reviewCount > 0
+                ? (reviewRatings.reduce((s, r) => s + r.rating, 0) / reviewCount).toFixed(1)
+                : null
 
               return (
                 <div
@@ -85,13 +89,6 @@ export default function CustomerCategory() {
                       </div>
                     )}
 
-                    {reviewCount > 0 && (
-                      <div className="absolute top-2 left-2 bg-brand-green text-brand-gold text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <span>★</span>
-                        <span>{reviewCount}</span>
-                      </div>
-                    )}
-
                     {soldOut && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                         <span className="bg-black/65 text-white text-[11px] font-bold tracking-[0.3em] px-4 py-2 rounded-full uppercase">
@@ -109,13 +106,24 @@ export default function CustomerCategory() {
                         : <span className="text-gray-400 font-normal text-sm">Price on request</span>
                       }
                     </p>
-                    <button
-                      type="button"
-                      onClick={e => { e.stopPropagation(); setReviewingProduct({ id: product.id, name: product.name }) }}
-                      className="mt-2 w-full border border-brand-green text-brand-green rounded-lg py-1.5 text-xs font-semibold hover:bg-brand-green/5 transition-colors"
-                    >
-                      ★ Write a Review
-                    </button>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      {avgRating ? (
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <span className="text-brand-gold">★</span>
+                          <span className="font-semibold text-gray-700">{avgRating}</span>
+                          <span className="text-gray-400">({reviewCount})</span>
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">No reviews yet</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={e => { e.stopPropagation(); setReviewingProduct({ id: product.id, name: product.name }) }}
+                        className="border border-brand-green text-brand-green rounded-lg px-2 py-1 text-xs font-semibold hover:bg-brand-green/5 transition-colors whitespace-nowrap"
+                      >
+                        ★ Review
+                      </button>
+                    </div>
                   </div>
                 </div>
               )

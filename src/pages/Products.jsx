@@ -51,7 +51,7 @@ export default function Products() {
       supabase.from('categories').select('name').eq('id', categoryId).single(),
       supabase
         .from('products')
-        .select('*, purchases(quantity, price_per_piece), sales(quantity_sold, selling_price)')
+        .select('*, purchases(quantity, price_per_piece), sales(quantity_sold, selling_price), product_reviews(count)')
         .eq('category_id', categoryId)
         .order('created_at', { ascending: false }),
     ])
@@ -129,6 +129,7 @@ export default function Products() {
           <div className="grid grid-cols-3 gap-4">
             {products.map(product => {
               const { stock, profit } = computeSummary(product)
+              const reviewCount = product.product_reviews?.[0]?.count ?? 0
               return (
                 <div
                   key={product.id}
@@ -142,6 +143,12 @@ export default function Products() {
                       <span className="text-4xl font-bold text-brand-green/40">
                         {product.name.charAt(0).toUpperCase()}
                       </span>
+                    </div>
+                  )}
+                  {reviewCount > 0 && (
+                    <div className="absolute top-2 left-2 z-10 bg-brand-green text-brand-gold text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span>★</span>
+                      <span>{reviewCount}</span>
                     </div>
                   )}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
