@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import CustomerFooter from '../components/customer/CustomerFooter'
+import FloatingFeedbackButton from '../components/customer/FloatingFeedbackButton'
+import ReviewModal from '../components/customer/ReviewModal'
 
 export default function CustomerCategory() {
   const { categoryId } = useParams()
@@ -8,6 +11,7 @@ export default function CustomerCategory() {
   const [category, setCategory] = useState(null)
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [reviewingProduct, setReviewingProduct] = useState(null) // { id, name } | null
 
   useEffect(() => {
     async function load() {
@@ -27,7 +31,7 @@ export default function CustomerCategory() {
   }, [categoryId])
 
   return (
-    <div className="min-h-screen bg-brand-cream">
+    <div className="min-h-screen bg-brand-cream flex flex-col">
       <div className="bg-brand-green px-6 py-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <button
@@ -96,6 +100,13 @@ export default function CustomerCategory() {
                         : <span className="text-gray-400 font-normal text-sm">Price on request</span>
                       }
                     </p>
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setReviewingProduct({ id: product.id, name: product.name }) }}
+                      className="mt-2 w-full border border-brand-green text-brand-green rounded-lg py-1.5 text-xs font-semibold hover:bg-brand-green/5 transition-colors"
+                    >
+                      ★ Write a Review
+                    </button>
                   </div>
                 </div>
               )
@@ -103,6 +114,15 @@ export default function CustomerCategory() {
           </div>
         )}
       </div>
+    <CustomerFooter />
+    <FloatingFeedbackButton />
+    {reviewingProduct && (
+      <ReviewModal
+        productId={reviewingProduct.id}
+        productName={reviewingProduct.name}
+        onClose={() => setReviewingProduct(null)}
+      />
+    )}
     </div>
   )
 }
