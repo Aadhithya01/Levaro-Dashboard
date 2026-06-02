@@ -14,16 +14,19 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true)
   const [showPurchase, setShowPurchase] = useState(false)
   const [showSale, setShowSale] = useState(false)
+  const [reviews, setReviews] = useState([])
 
   async function fetchData() {
-    const [{ data: prod }, { data: purch }, { data: sale }] = await Promise.all([
+    const [{ data: prod }, { data: purch }, { data: sale }, { data: rev }] = await Promise.all([
       supabase.from('products').select('*').eq('id', id).single(),
       supabase.from('purchases').select('*').eq('product_id', id).order('date_of_purchase', { ascending: false }),
       supabase.from('sales').select('*').eq('product_id', id).order('sale_date', { ascending: false }),
+      supabase.from('product_reviews').select('*').eq('product_id', id).order('created_at', { ascending: false }),
     ])
     setProduct(prod)
     setPurchases(purch ?? [])
     setSales(sale ?? [])
+    setReviews(rev ?? [])
     setLoading(false)
   }
 
@@ -105,6 +108,30 @@ export default function ProductDetail() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8">
+          <h2 className="font-semibold text-brand-green mb-3">
+            Customer Reviews <span className="text-gray-400 font-normal text-sm">({reviews.length})</span>
+          </h2>
+          {reviews.length === 0 ? (
+            <p className="text-gray-400 text-sm">No reviews yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {reviews.map(r => (
+                <div key={r.id} className="bg-white rounded-lg border border-brand-border px-4 py-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-800">{r.reviewer_name}</span>
+                      <span className="text-brand-gold text-sm">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
+                    </div>
+                    <span className="text-xs text-gray-400">{r.created_at?.slice(0, 10)}</span>
+                  </div>
+                  <p className="text-sm text-gray-600">{r.comment}</p>
+                </div>
+              ))}
             </div>
           )}
         </div>

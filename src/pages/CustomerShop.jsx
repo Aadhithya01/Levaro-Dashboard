@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import CustomerFooter from '../components/customer/CustomerFooter'
 import FloatingFeedbackButton from '../components/customer/FloatingFeedbackButton'
+import FloatingSuggestionButton from '../components/customer/FloatingSuggestionButton'
 
 export default function CustomerShop() {
   const [categories, setCategories] = useState([])
@@ -67,6 +68,7 @@ export default function CustomerShop() {
 
       <CustomerFooter />
       <FloatingFeedbackButton />
+      <FloatingSuggestionButton />
     </div>
   )
 }

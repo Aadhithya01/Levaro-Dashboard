@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import CustomerFooter from '../components/customer/CustomerFooter'
 import FloatingFeedbackButton from '../components/customer/FloatingFeedbackButton'
+import FloatingSuggestionButton from '../components/customer/FloatingSuggestionButton'
 import ReviewModal from '../components/customer/ReviewModal'
 
 export default function CustomerCategory() {
@@ -116,6 +117,7 @@ export default function CustomerCategory() {
       </div>
     <CustomerFooter />
     <FloatingFeedbackButton />
+    <FloatingSuggestionButton />
     {reviewingProduct && (
       <ReviewModal
         productId={reviewingProduct.id}
