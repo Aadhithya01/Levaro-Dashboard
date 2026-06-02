@@ -20,7 +20,7 @@ export default function CustomerCategory() {
         supabase.from('categories').select('name').eq('id', categoryId).single(),
         supabase
           .from('products')
-          .select('id, name, image_url, selling_price, purchases(quantity), sales(quantity_sold)')
+          .select('id, name, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(count)')
           .eq('category_id', categoryId)
           .order('created_at', { ascending: false }),
       ])
@@ -63,6 +63,7 @@ export default function CustomerCategory() {
               const totalQty = (product.purchases ?? []).reduce((sum, p) => sum + p.quantity, 0)
               const soldQty = (product.sales ?? []).reduce((sum, s) => sum + s.quantity_sold, 0)
               const soldOut = totalQty - soldQty <= 0
+              const reviewCount = product.product_reviews?.[0]?.count ?? 0
 
               return (
                 <div
@@ -81,6 +82,13 @@ export default function CustomerCategory() {
                         <span className="text-5xl font-bold text-brand-green/20">
                           {product.name.charAt(0).toUpperCase()}
                         </span>
+                      </div>
+                    )}
+
+                    {reviewCount > 0 && (
+                      <div className="absolute top-2 left-2 bg-brand-green text-brand-gold text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span>★</span>
+                        <span>{reviewCount}</span>
                       </div>
                     )}
 
