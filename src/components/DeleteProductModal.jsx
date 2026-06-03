@@ -25,19 +25,17 @@ export default function DeleteProductModal({ product, onClose, onDeleted }) {
 
     setDeleted(true)
     onDeleted()
-    setTimeout(() => onClose(), 2500)
+    setTimeout(() => onClose(), 1500)
   }
 
   if (deleted) return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-64 text-center px-6 py-8">
-        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
-          <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <p className="text-gray-800 font-semibold text-sm">Product deleted</p>
+    <div className="fixed top-4 right-4 z-50 bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3 flex items-center gap-3">
+      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+        <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
       </div>
+      <p className="text-sm font-medium text-gray-800">Product deleted</p>
     </div>
   )
 
