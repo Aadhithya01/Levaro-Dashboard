@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-export default function AddPurchaseModal({ productId, onClose, onAdded }) {
-  const [quantity, setQuantity] = useState('')
-  const [price, setPrice] = useState('')
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+export default function EditPurchaseModal({ purchase, onClose, onUpdated }) {
+  const [quantity, setQuantity] = useState(String(purchase.quantity))
+  const [price, setPrice] = useState(String(purchase.price_per_piece))
+  const [date, setDate] = useState(purchase.date_of_purchase)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -17,22 +17,21 @@ export default function AddPurchaseModal({ productId, onClose, onAdded }) {
     if (!date) { setError('Select a date'); return }
 
     setLoading(true)
-    const { error: err } = await supabase.from('purchases').insert({
-      product_id: productId,
+    const { error: err } = await supabase.from('purchases').update({
       date_of_purchase: date,
       quantity: qty,
       price_per_piece: ppp,
-    })
+    }).eq('id', purchase.id)
     setLoading(false)
     if (err) { setError(err.message); return }
-    onAdded()
+    onUpdated()
     onClose()
   }
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
-        <h2 className="text-lg font-semibold mb-4 text-brand-green">Add Stock</h2>
+        <h2 className="text-lg font-semibold mb-4 text-brand-green">Edit Stock Entry</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Date of Purchase</label>
@@ -54,7 +53,6 @@ export default function AddPurchaseModal({ productId, onClose, onAdded }) {
                 value={quantity}
                 onChange={e => setQuantity(e.target.value)}
                 className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
-                placeholder="e.g. 50"
               />
             </div>
             <div className="flex-1">
@@ -67,7 +65,6 @@ export default function AddPurchaseModal({ productId, onClose, onAdded }) {
                 value={price}
                 onChange={e => setPrice(e.target.value)}
                 className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
-                placeholder="e.g. 120"
               />
             </div>
           </div>
@@ -75,7 +72,7 @@ export default function AddPurchaseModal({ productId, onClose, onAdded }) {
           <div className="flex gap-2 justify-end">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
             <button type="submit" disabled={loading} className="px-4 py-2 text-sm bg-brand-green text-brand-gold rounded hover:opacity-90 disabled:opacity-50">
-              {loading ? 'Saving...' : 'Add Stock'}
+              {loading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

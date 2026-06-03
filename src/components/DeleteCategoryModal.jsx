@@ -51,9 +51,13 @@ export default function DeleteCategoryModal({ category, productCount, onClose, o
 
   if (deleted) return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl overflow-hidden shadow-2xl w-64 text-center">
-        <img src="/deleted.jpg" alt="" className="w-full object-cover" />
-        <p className="text-brand-green font-bold py-3 tracking-widest text-sm uppercase">Deleted!</p>
+      <div className="bg-white rounded-2xl shadow-2xl w-64 text-center px-6 py-8">
+        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+          <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <p className="text-gray-800 font-semibold text-sm">Category deleted</p>
       </div>
     </div>
   )

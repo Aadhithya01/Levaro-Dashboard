@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 
 export default function EditExpenseModal({ expense, members, onClose, onUpdated }) {
   const [description, setDescription] = useState(expense.description)
+  const [notes, setNotes] = useState(expense.notes ?? '')
   const [amount, setAmount] = useState(String(expense.amount))
   const [paidBy, setPaidBy] = useState(expense.paid_by)
   const [splitWith, setSplitWith] = useState([
@@ -30,7 +31,7 @@ export default function EditExpenseModal({ expense, members, onClose, onUpdated 
 
     const { error: updateError } = await supabase
       .from('ledger_expenses')
-      .update({ description: description.trim(), amount: amt, paid_by: paidBy })
+      .update({ description: description.trim(), notes: notes.trim() || null, amount: amt, paid_by: paidBy })
       .eq('id', expense.id)
     if (updateError) { setError(updateError.message); setLoading(false); return }
 
@@ -70,6 +71,18 @@ export default function EditExpenseModal({ expense, members, onClose, onUpdated 
               value={description}
               onChange={e => setDescription(e.target.value)}
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/30"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Notes <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <textarea
+              rows={2}
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Purpose or reason for this expense..."
+              className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/30 resize-none"
             />
           </div>
           <div>

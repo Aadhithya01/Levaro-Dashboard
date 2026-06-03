@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 export default function AddExpenseModal({ members, onClose, onAdded }) {
   const { user } = useAuth()
   const [description, setDescription] = useState('')
+  const [notes, setNotes] = useState('')
   const [amount, setAmount] = useState('')
   const [paidBy, setPaidBy] = useState(members[0]?.id ?? '')
   const [splitWith, setSplitWith] = useState(members.map(m => m.id))
@@ -29,7 +30,7 @@ export default function AddExpenseModal({ members, onClose, onAdded }) {
 
     const { data: exp, error: expError } = await supabase
       .from('ledger_expenses')
-      .insert({ description: description.trim(), amount: amt, paid_by: paidBy, created_by: user?.id })
+      .insert({ description: description.trim(), notes: notes.trim() || null, amount: amt, paid_by: paidBy, created_by: user?.id })
       .select()
       .single()
     if (expError) { setError(expError.message); setLoading(false); return }
@@ -65,6 +66,18 @@ export default function AddExpenseModal({ members, onClose, onAdded }) {
               onChange={e => setDescription(e.target.value)}
               placeholder="e.g. Dinner"
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/30"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Notes <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <textarea
+              rows={2}
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Purpose or reason for this expense..."
+              className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/30 resize-none"
             />
           </div>
           <div>

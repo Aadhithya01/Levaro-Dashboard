@@ -3,7 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Navbar from '../components/Navbar'
 import AddPurchaseModal from '../components/AddPurchaseModal'
+import EditPurchaseModal from '../components/EditPurchaseModal'
 import AddSaleModal from '../components/AddSaleModal'
+import EditSaleModal from '../components/EditSaleModal'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -14,6 +16,8 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true)
   const [showPurchase, setShowPurchase] = useState(false)
   const [showSale, setShowSale] = useState(false)
+  const [editingPurchase, setEditingPurchase] = useState(null)
+  const [editingSale, setEditingSale] = useState(null)
   const [reviews, setReviews] = useState([])
 
   async function fetchData() {
@@ -55,15 +59,7 @@ export default function ProductDetail() {
             onError={e => { e.currentTarget.style.display = 'none' }}
           />
         )}
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-bold text-brand-green">{product.name}</h1>
-          <button
-            onClick={() => setShowPurchase(true)}
-            className="text-sm bg-brand-green text-brand-gold px-3 py-1.5 rounded hover:opacity-90"
-          >
-            + Add Stock
-          </button>
-        </div>
+        <h1 className="text-xl font-bold text-brand-green mb-2">{product.name}</h1>
 
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[
@@ -77,6 +73,48 @@ export default function ProductDetail() {
               <p className={`text-lg font-semibold ${color}`}>{value}</p>
             </div>
           ))}
+        </div>
+
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-brand-green">Stock Purchases</h2>
+            <button onClick={() => setShowPurchase(true)} className="text-sm bg-brand-green text-brand-gold px-3 py-1.5 rounded hover:opacity-90">+ Add Stock</button>
+          </div>
+          {purchases.length === 0 ? (
+            <p className="text-gray-400 text-sm">No stock entries yet.</p>
+          ) : (
+            <div className="bg-white rounded-lg border border-brand-border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-brand-green">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-brand-gold font-medium">Date</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Qty</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Price / Piece (₹)</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Total (₹)</th>
+                    <th className="px-4 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-brand-border">
+                  {purchases.map(p => (
+                    <tr key={p.id} className="hover:bg-brand-cream">
+                      <td className="px-4 py-3 text-gray-700">{p.date_of_purchase}</td>
+                      <td className="px-4 py-3 text-right text-gray-700">{p.quantity}</td>
+                      <td className="px-4 py-3 text-right text-gray-700">₹{Number(p.price_per_piece).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right font-medium text-brand-green">₹{(p.quantity * p.price_per_piece).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => setEditingPurchase(p)}
+                          className="text-xs text-brand-green hover:underline"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         <div>
@@ -95,6 +133,7 @@ export default function ProductDetail() {
                     <th className="text-right px-4 py-3 text-brand-gold font-medium">Qty Sold</th>
                     <th className="text-right px-4 py-3 text-brand-gold font-medium">Selling Price (₹)</th>
                     <th className="text-right px-4 py-3 text-brand-gold font-medium">Revenue (₹)</th>
+                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-border">
@@ -104,6 +143,9 @@ export default function ProductDetail() {
                       <td className="px-4 py-3 text-right text-gray-700">{s.quantity_sold}</td>
                       <td className="px-4 py-3 text-right text-gray-700">₹{Number(s.selling_price).toFixed(2)}</td>
                       <td className="px-4 py-3 text-right font-medium text-brand-green">₹{(s.quantity_sold * s.selling_price).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => setEditingSale(s)} className="text-xs text-brand-green hover:underline">Edit</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -138,7 +180,9 @@ export default function ProductDetail() {
       </div>
 
       {showPurchase && <AddPurchaseModal productId={id} onClose={() => setShowPurchase(false)} onAdded={fetchData} />}
+      {editingPurchase && <EditPurchaseModal purchase={editingPurchase} onClose={() => setEditingPurchase(null)} onUpdated={fetchData} />}
       {showSale && <AddSaleModal productId={id} defaultSellingPrice={product.selling_price} onClose={() => setShowSale(false)} onAdded={fetchData} />}
+      {editingSale && <EditSaleModal sale={editingSale} onClose={() => setEditingSale(null)} onUpdated={fetchData} />}
     </div>
   )
 }

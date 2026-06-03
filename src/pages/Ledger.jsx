@@ -168,6 +168,7 @@ export default function Ledger() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800">{item.description}</p>
+                        {item.notes && <p className="text-xs text-gray-500 italic mt-0.5">{item.notes}</p>}
                         <p className="text-xs text-gray-400">
                           {memberMap[item.paid_by]?.name} paid · {(item.ledger_splits?.length ?? 0) + 1}-way split
                         </p>
