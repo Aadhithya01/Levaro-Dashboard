@@ -30,6 +30,7 @@ export default function Ledger() {
   const [showSettle, setShowSettle] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
   const [editingSettlement, setEditingSettlement] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null) // { type: 'expense'|'settlement', item }
 
   async function fetchAll() {
     const [{ data: m }, { data: e }, { data: s }] = await Promise.all([
@@ -92,16 +93,16 @@ export default function Ledger() {
     return 'text-gray-500'
   }
 
-  async function deleteExpense(item) {
-    if (!window.confirm(`Delete "${item.description}"?`)) return
-    await supabase.from('ledger_splits').delete().eq('expense_id', item.id)
-    await supabase.from('ledger_expenses').delete().eq('id', item.id)
-    fetchAll()
-  }
-
-  async function deleteSettlement(item) {
-    if (!window.confirm('Delete this settlement?')) return
-    await supabase.from('ledger_settlements').delete().eq('id', item.id)
+  async function confirmAndDelete() {
+    if (!confirmDelete) return
+    const { type, item } = confirmDelete
+    setConfirmDelete(null)
+    if (type === 'expense') {
+      await supabase.from('ledger_splits').delete().eq('expense_id', item.id)
+      await supabase.from('ledger_expenses').delete().eq('id', item.id)
+    } else {
+      await supabase.from('ledger_settlements').delete().eq('id', item.id)
+    }
     fetchAll()
   }
 
@@ -188,7 +189,7 @@ export default function Ledger() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => deleteExpense(item)}
+                            onClick={() => setConfirmDelete({ type: 'expense', item })}
                             className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"
                           >
                             <TrashIcon />
@@ -224,7 +225,7 @@ export default function Ledger() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => deleteSettlement(item)}
+                            onClick={() => setConfirmDelete({ type: 'settlement', item })}
                             className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"
                           >
                             <TrashIcon />
@@ -261,6 +262,42 @@ export default function Ledger() {
           onClose={() => setEditingSettlement(null)}
           onUpdated={fetchAll}
         />
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-gray-800">
+                {confirmDelete.type === 'expense'
+                  ? `Delete "${confirmDelete.item.description}"?`
+                  : 'Delete this settlement?'}
+              </p>
+            </div>
+            <p className="text-xs text-gray-400 mb-4">This action cannot be undone.</p>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmAndDelete}
+                className="px-4 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
