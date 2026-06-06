@@ -1,6 +1,6 @@
 import MediaSlider from '../MediaSlider'
 
-export default function ProductMediaModal({ product, allMedia, soldOut, onClose, onReview }) {
+export default function ProductMediaModal({ product, allMedia = [], soldOut, onClose, onReview }) {
   return (
     <div
       className="fixed inset-0 bg-black/80 z-50 flex flex-col"
@@ -23,6 +23,7 @@ export default function ProductMediaModal({ product, allMedia, soldOut, onClose,
         <button
           type="button"
           onClick={onClose}
+          aria-label="Close"
           className="absolute top-3 right-3 bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center text-base hover:bg-black/70"
         >
           ✕
