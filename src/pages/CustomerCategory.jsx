@@ -29,17 +29,20 @@ export default function CustomerCategory() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: cat }, { data: prods }] = await Promise.all([
-        supabase.from('categories').select('name').eq('id', categoryId).single(),
-        supabase
-          .from('products')
-          .select('id, name, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order)')
-          .eq('category_id', categoryId)
-          .order('created_at', { ascending: false }),
-      ])
-      setCategory(cat)
-      setProducts(prods ?? [])
-      setLoading(false)
+      try {
+        const [{ data: cat }, { data: prods }] = await Promise.all([
+          supabase.from('categories').select('name').eq('id', categoryId).single(),
+          supabase
+            .from('products')
+            .select('id, name, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order)')
+            .eq('category_id', categoryId)
+            .order('created_at', { ascending: false }),
+        ])
+        setCategory(cat)
+        setProducts(prods ?? [])
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [categoryId])
