@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function MediaUploadSection({ items, onChange, maxItems = 10 }) {
   const fileInputRef = useRef(null)
   const createdUrlsRef = useRef([])
+  const [sizeWarning, setSizeWarning] = useState(false)
 
   function handleFiles(e) {
     const files = Array.from(e.target.files)
@@ -10,6 +11,10 @@ export default function MediaUploadSection({ items, onChange, maxItems = 10 }) {
     if (!files.length) return
     if (items.length >= maxItems) return
     const validFiles = files.filter(f => f.size <= 50 * 1024 * 1024)
+    if (validFiles.length < files.length) {
+      setSizeWarning(true)
+      setTimeout(() => setSizeWarning(false), 3000)
+    }
     const remaining = maxItems - items.length
     const toAdd = validFiles.slice(0, remaining).map(file => {
       const previewUrl = URL.createObjectURL(file)
@@ -97,6 +102,9 @@ export default function MediaUploadSection({ items, onChange, maxItems = 10 }) {
             </div>
           ))}
         </div>
+      )}
+      {sizeWarning && (
+        <p className="text-xs text-red-500 mb-1">Some files were skipped (max 50 MB each).</p>
       )}
       {items.length < maxItems && (
         <button

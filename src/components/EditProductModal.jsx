@@ -100,13 +100,22 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
     }
 
     // Insert new product_images rows
-    const existingExtraCount = mediaItems.filter(i => i.isExisting && i.removable).length
+    // Get current max sort_order to avoid collisions with surviving rows
+    const { data: maxOrderRow } = await supabase
+      .from('product_images')
+      .select('sort_order')
+      .eq('product_id', product.id)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .single()
+    const baseOrder = maxOrderRow?.sort_order ?? 0
+
     const insertedRowIds = []
     const extraRows = uploadedItems.slice(extraStartIdx).map((item, i) => ({
       product_id: product.id,
       media_url: item.url,
       media_type: item.type,
-      sort_order: existingExtraCount + i + 1,
+      sort_order: baseOrder + i + 1,
     }))
     if (extraRows.length) {
       const { data: insertedRows, error: mediaError } = await supabase
