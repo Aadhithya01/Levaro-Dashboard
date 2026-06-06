@@ -1,28 +1,44 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 export default function MediaUploadSection({ items, onChange, maxItems = 10 }) {
   const fileInputRef = useRef(null)
+  const createdUrlsRef = useRef([])
 
   function handleFiles(e) {
     const files = Array.from(e.target.files)
     e.target.value = ''
     if (!files.length) return
+    if (items.length >= maxItems) return
     const remaining = maxItems - items.length
-    const toAdd = files.slice(0, remaining).map(file => ({
-      file,
-      previewUrl: URL.createObjectURL(file),
-      type: file.type.startsWith('video/') ? 'video' : 'image',
-      isExisting: false,
-      removable: true,
-    }))
+    const toAdd = files.slice(0, remaining).map(file => {
+      const previewUrl = URL.createObjectURL(file)
+      createdUrlsRef.current.push(previewUrl)
+      return {
+        file,
+        previewUrl,
+        type: file.type.startsWith('video/') ? 'video' : 'image',
+        isExisting: false,
+        removable: true,
+        id: crypto.randomUUID(),
+      }
+    })
     onChange([...items, ...toAdd])
   }
 
   function removeItem(idx) {
     const item = items[idx]
-    if (!item.isExisting && item.previewUrl) URL.revokeObjectURL(item.previewUrl)
+    if (!item.isExisting && item.previewUrl) {
+      URL.revokeObjectURL(item.previewUrl)
+      createdUrlsRef.current = createdUrlsRef.current.filter(u => u !== item.previewUrl)
+    }
     onChange(items.filter((_, i) => i !== idx))
   }
+
+  useEffect(() => {
+    return () => {
+      createdUrlsRef.current.forEach(url => URL.revokeObjectURL(url))
+    }
+  }, [])
 
   return (
     <div>
@@ -42,7 +58,7 @@ export default function MediaUploadSection({ items, onChange, maxItems = 10 }) {
         <div className="flex flex-wrap gap-2 mb-2">
           {items.map((item, idx) => (
             <div
-              key={idx}
+              key={item.id ?? item.url}
               className="relative w-16 h-16 rounded-lg overflow-hidden border border-brand-border"
             >
               {item.type === 'video' ? (
@@ -73,7 +89,7 @@ export default function MediaUploadSection({ items, onChange, maxItems = 10 }) {
                 </div>
               )}
               {!item.removable && (
-                <div className="absolute bottom-0.5 left-0.5 bg-black/40 rounded px-1 text-white text-[9px]">
+                <div className="absolute top-0.5 left-0.5 bg-black/40 rounded px-1 text-white text-[9px]">
                   main
                 </div>
               )}
@@ -87,7 +103,7 @@ export default function MediaUploadSection({ items, onChange, maxItems = 10 }) {
           onClick={() => fileInputRef.current.click()}
           className="w-full border-2 border-dashed border-brand-border rounded-lg py-3 text-sm text-gray-400 hover:border-brand-green hover:text-brand-green transition-colors"
         >
-          📷 Add photo / video{items.length > 0 ? ` (${items.length}/${maxItems})` : ''}
+          Add photo / video{items.length > 0 ? ` (${items.length}/${maxItems})` : ''}
         </button>
       )}
     </div>
