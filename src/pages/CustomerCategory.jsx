@@ -5,6 +5,18 @@ import CustomerFooter from '../components/customer/CustomerFooter'
 import FloatingFeedbackButton from '../components/customer/FloatingFeedbackButton'
 import FloatingSuggestionButton from '../components/customer/FloatingSuggestionButton'
 import ReviewModal from '../components/customer/ReviewModal'
+import MediaSlider from '../components/MediaSlider'
+import ProductMediaModal from '../components/customer/ProductMediaModal'
+
+function buildMedia(product) {
+  const items = []
+  if (product.image_url) items.push({ url: product.image_url, type: 'image' })
+  ;(product.product_images ?? [])
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .forEach(img => items.push({ url: img.media_url, type: img.media_type }))
+  return items
+}
 
 export default function CustomerCategory() {
   const { categoryId } = useParams()
@@ -12,7 +24,8 @@ export default function CustomerCategory() {
   const [category, setCategory] = useState(null)
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
-  const [reviewingProduct, setReviewingProduct] = useState(null) // { id, name } | null
+  const [reviewingProduct, setReviewingProduct] = useState(null)
+  const [viewingProduct, setViewingProduct] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -20,7 +33,7 @@ export default function CustomerCategory() {
         supabase.from('categories').select('name').eq('id', categoryId).single(),
         supabase
           .from('products')
-          .select('id, name, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(rating)')
+          .select('id, name, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order)')
           .eq('category_id', categoryId)
           .order('created_at', { ascending: false }),
       ])
@@ -68,10 +81,12 @@ export default function CustomerCategory() {
               const avgRating = reviewCount > 0
                 ? (reviewRatings.reduce((s, r) => s + r.rating, 0) / reviewCount).toFixed(1)
                 : null
+              const allMedia = buildMedia(product)
 
               return (
                 <div
                   key={product.id}
+                  onClick={() => !soldOut && setViewingProduct({ product, allMedia, soldOut })}
                   className={`rounded-2xl overflow-hidden bg-white border shadow-sm transition-all ${
                     soldOut
                       ? 'border-brand-border opacity-60 cursor-not-allowed'
@@ -79,8 +94,8 @@ export default function CustomerCategory() {
                   }`}
                 >
                   <div className="relative aspect-square">
-                    {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                    {allMedia.length > 0 ? (
+                      <MediaSlider items={allMedia} />
                     ) : (
                       <div className="w-full h-full bg-brand-green/10 flex items-center justify-center">
                         <span className="text-5xl font-bold text-brand-green/20">
@@ -88,9 +103,8 @@ export default function CustomerCategory() {
                         </span>
                       </div>
                     )}
-
                     {soldOut && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
                         <span className="bg-black/65 text-white text-[11px] font-bold tracking-[0.3em] px-4 py-2 rounded-full uppercase">
                           Sold Out
                         </span>
@@ -131,16 +145,27 @@ export default function CustomerCategory() {
           </div>
         )}
       </div>
-    <CustomerFooter />
-    <FloatingFeedbackButton />
-    <FloatingSuggestionButton />
-    {reviewingProduct && (
-      <ReviewModal
-        productId={reviewingProduct.id}
-        productName={reviewingProduct.name}
-        onClose={() => setReviewingProduct(null)}
-      />
-    )}
+
+      <CustomerFooter />
+      <FloatingFeedbackButton />
+      <FloatingSuggestionButton />
+
+      {reviewingProduct && (
+        <ReviewModal
+          productId={reviewingProduct.id}
+          productName={reviewingProduct.name}
+          onClose={() => setReviewingProduct(null)}
+        />
+      )}
+      {viewingProduct && (
+        <ProductMediaModal
+          product={viewingProduct.product}
+          allMedia={viewingProduct.allMedia}
+          soldOut={viewingProduct.soldOut}
+          onClose={() => setViewingProduct(null)}
+          onReview={p => { setViewingProduct(null); setReviewingProduct({ id: p.id, name: p.name }) }}
+        />
+      )}
     </div>
   )
 }
