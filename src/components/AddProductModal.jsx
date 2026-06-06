@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import MediaUploadSection from './MediaUploadSection'
 
 export default function AddProductModal({ categoryId, onClose, onAdded }) {
   const [name, setName] = useState('')
@@ -7,21 +8,9 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
   const [quantity, setQuantity] = useState('')
   const [price, setPrice] = useState('')
   const [sellingPrice, setSellingPrice] = useState('')
-  const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
+  const [mediaItems, setMediaItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const fileInputRef = useRef(null)
-
-  function handleImageChange(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) { setError('Please select an image file.'); return }
-    if (file.size > 5 * 1024 * 1024) { setError('Image must be under 5 MB.'); return }
-    setError('')
-    setImageFile(file)
-    setImagePreview(URL.createObjectURL(file))
-  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -35,29 +24,58 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
     setLoading(true)
     setError('')
 
-    let image_url = null
-    let uploadedPath = null
-    if (imageFile) {
-      const ext = imageFile.name.split('.').pop()
-      uploadedPath = `${crypto.randomUUID()}.${ext}`
+    // Upload all selected media files
+    const uploadedItems = []
+    for (const item of mediaItems) {
+      const ext = item.file.name.split('.').pop()
+      const path = `${crypto.randomUUID()}.${ext}`
       const { error: uploadError } = await supabase.storage
         .from('product-images')
-        .upload(uploadedPath, imageFile)
-      if (uploadError) { setError(uploadError.message); setLoading(false); return }
-      const { data } = supabase.storage.from('product-images').getPublicUrl(uploadedPath)
-      image_url = data.publicUrl
+        .upload(path, item.file)
+      if (uploadError) {
+        if (uploadedItems.length) {
+          await supabase.storage.from('product-images').remove(uploadedItems.map(i => i.path))
+        }
+        setError(uploadError.message)
+        setLoading(false)
+        return
+      }
+      const { data } = supabase.storage.from('product-images').getPublicUrl(path)
+      uploadedItems.push({ path, url: data.publicUrl, type: item.type })
     }
+
+    const image_url = uploadedItems[0]?.url ?? null
 
     const { data: product, error: insertError } = await supabase
       .from('products')
-      .insert({ name: name.trim(), category_id: categoryId, selling_price: sp, ...(code.trim() && { code: code.trim() }), ...(image_url && { image_url }) })
+      .insert({
+        name: name.trim(),
+        category_id: categoryId,
+        selling_price: sp,
+        ...(code.trim() && { code: code.trim() }),
+        ...(image_url && { image_url }),
+      })
       .select()
       .single()
     if (insertError) {
-      if (uploadedPath) await supabase.storage.from('product-images').remove([uploadedPath])
+      if (uploadedItems.length) {
+        await supabase.storage.from('product-images').remove(uploadedItems.map(i => i.path))
+      }
       setError(insertError.message)
       setLoading(false)
       return
+    }
+
+    // Insert extra media (index 1+) into product_images
+    if (uploadedItems.length > 1) {
+      const rows = uploadedItems.slice(1).map((item, i) => ({
+        product_id: product.id,
+        media_url: item.url,
+        media_type: item.type,
+        sort_order: i,
+      }))
+      const { error: mediaError } = await supabase.from('product_images').insert(rows)
+      if (mediaError) { setError(mediaError.message); setLoading(false); return }
     }
 
     const today = new Date().toISOString().slice(0, 10)
@@ -67,7 +85,6 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
     setLoading(false)
     if (purchaseError) { setError(purchaseError.message); return }
 
-    if (imagePreview) URL.revokeObjectURL(imagePreview)
     onAdded()
     onClose()
   }
@@ -140,38 +157,7 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
               placeholder="e.g. 250"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Photo <span className="text-gray-400 font-normal">(optional)</span>
-            </label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageChange}
-            />
-            {imagePreview ? (
-              <div className="flex items-center gap-3">
-                <img src={imagePreview} alt="preview" className="w-16 h-16 object-cover rounded-lg border border-brand-border" />
-                <button
-                  type="button"
-                  onClick={() => { URL.revokeObjectURL(imagePreview); setImageFile(null); setImagePreview(null) }}
-                  className="text-xs text-red-500 hover:text-red-700"
-                >
-                  Remove
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current.click()}
-                className="w-full border-2 border-dashed border-brand-border rounded-lg py-3 text-sm text-gray-400 hover:border-brand-green hover:text-brand-green transition-colors"
-              >
-                📷 Add photo
-              </button>
-            )}
-          </div>
+          <MediaUploadSection items={mediaItems} onChange={setMediaItems} />
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex gap-2 justify-end">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
