@@ -70,16 +70,7 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
     setLoading(true)
     setError('')
 
-    // Delete removed product_images rows and their storage objects
-    for (const removedId of removedIds) {
-      const orig = originalExtraItemsRef.current.find(i => i.id === removedId)
-      if (orig?.storagePath) {
-        await supabase.storage.from('product-images').remove([orig.storagePath])
-      }
-      await supabase.from('product_images').delete().eq('id', removedId)
-    }
-
-    // Upload new files
+    // Upload new files first
     const newItems = mediaItems.filter(item => !item.isExisting)
     const uploadedItems = []
     for (const item of newItems) {
@@ -100,7 +91,7 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
       uploadedItems.push({ path, url: data.publicUrl, type: item.type })
     }
 
-    // If product had no image_url, first new upload becomes image_url
+    // Determine new image_url
     let newImageUrl = product.image_url
     let extraStartIdx = 0
     if (!newImageUrl && uploadedItems.length > 0) {
@@ -108,8 +99,9 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
       extraStartIdx = 1
     }
 
-    // Insert extra uploaded items into product_images
+    // Insert new product_images rows
     const existingExtraCount = mediaItems.filter(i => i.isExisting && i.removable).length
+    const insertedRowIds = []
     const extraRows = uploadedItems.slice(extraStartIdx).map((item, i) => ({
       product_id: product.id,
       media_url: item.url,
@@ -117,13 +109,17 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
       sort_order: existingExtraCount + i + 1,
     }))
     if (extraRows.length) {
-      const { error: mediaError } = await supabase.from('product_images').insert(extraRows)
+      const { data: insertedRows, error: mediaError } = await supabase
+        .from('product_images')
+        .insert(extraRows)
+        .select('id')
       if (mediaError) {
         await supabase.storage.from('product-images').remove(uploadedItems.map(i => i.path))
         setError(mediaError.message)
         setLoading(false)
         return
       }
+      insertedRows?.forEach(r => insertedRowIds.push(r.id))
     }
 
     // Update product row
@@ -136,9 +132,28 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
         image_url: newImageUrl,
       })
       .eq('id', product.id)
-    setLoading(false)
-    if (updateError) { setError(updateError.message); return }
 
+    if (updateError) {
+      await supabase.storage.from('product-images').remove(uploadedItems.map(i => i.path))
+      if (insertedRowIds.length) {
+        await supabase.from('product_images').delete().in('id', insertedRowIds)
+      }
+      setError(updateError.message)
+      setLoading(false)
+      return
+    }
+
+    // All writes succeeded — now safe to delete removed items
+    const uniqueRemovedIds = [...new Set(removedIds)]
+    for (const removedId of uniqueRemovedIds) {
+      const orig = originalExtraItemsRef.current.find(i => i.id === removedId)
+      if (orig?.storagePath) {
+        await supabase.storage.from('product-images').remove([orig.storagePath])
+      }
+      await supabase.from('product_images').delete().eq('id', removedId)
+    }
+
+    setLoading(false)
     onUpdated()
     onClose()
   }
