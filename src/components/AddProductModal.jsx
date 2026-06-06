@@ -72,18 +72,30 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
         product_id: product.id,
         media_url: item.url,
         media_type: item.type,
-        sort_order: i,
+        sort_order: i + 1,
       }))
       const { error: mediaError } = await supabase.from('product_images').insert(rows)
-      if (mediaError) { setError(mediaError.message); setLoading(false); return }
+      if (mediaError) {
+        await supabase.storage.from('product-images').remove(uploadedItems.map(i => i.path))
+        await supabase.from('products').delete().eq('id', product.id)
+        setError(mediaError.message)
+        setLoading(false)
+        return
+      }
     }
 
     const today = new Date().toISOString().slice(0, 10)
     const { error: purchaseError } = await supabase
       .from('purchases')
       .insert({ product_id: product.id, date_of_purchase: today, quantity: qty, price_per_piece: ppp })
+    if (purchaseError) {
+      await supabase.storage.from('product-images').remove(uploadedItems.map(i => i.path))
+      await supabase.from('products').delete().eq('id', product.id)
+      setError(purchaseError.message)
+      setLoading(false)
+      return
+    }
     setLoading(false)
-    if (purchaseError) { setError(purchaseError.message); return }
 
     onAdded()
     onClose()

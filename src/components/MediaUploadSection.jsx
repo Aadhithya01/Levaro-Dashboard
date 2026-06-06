@@ -9,8 +9,9 @@ export default function MediaUploadSection({ items, onChange, maxItems = 10 }) {
     e.target.value = ''
     if (!files.length) return
     if (items.length >= maxItems) return
+    const validFiles = files.filter(f => f.size <= 50 * 1024 * 1024)
     const remaining = maxItems - items.length
-    const toAdd = files.slice(0, remaining).map(file => {
+    const toAdd = validFiles.slice(0, remaining).map(file => {
       const previewUrl = URL.createObjectURL(file)
       createdUrlsRef.current.push(previewUrl)
       return {
