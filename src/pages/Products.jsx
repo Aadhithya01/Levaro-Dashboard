@@ -134,33 +134,36 @@ export default function Products() {
                 <div
                   key={product.id}
                   onClick={() => navigate(`/products/${product.id}`)}
-                  className="relative group aspect-square rounded-xl overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-brand-green transition-all shadow-sm"
+                  className="relative group aspect-square rounded-xl cursor-pointer ring-2 ring-transparent hover:ring-brand-green transition-all shadow-sm"
                 >
-                  {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-brand-green/20 flex items-center justify-center">
-                      <span className="text-4xl font-bold text-brand-green/40">
-                        {product.name.charAt(0).toUpperCase()}
-                      </span>
+                  {/* Image layer — overflow-hidden scoped here so it doesn't clip the hover buttons */}
+                  <div className="absolute inset-0 rounded-xl overflow-hidden">
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-brand-green/20 flex items-center justify-center">
+                        <span className="text-4xl font-bold text-brand-green/40">
+                          {product.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                      <p className="font-bold text-white text-sm truncate">{product.name}</p>
+                      {product.code && <p className="text-xs text-white/50 font-mono truncate">{product.code}</p>}
+                      <div className="flex justify-between mt-0.5">
+                        <span className="text-xs text-white/70">{stock} left</span>
+                        <span className={`text-xs font-semibold ${profit >= 0 ? 'text-brand-gold' : 'text-red-400'}`}>
+                          ₹{profit.toFixed(0)}
+                        </span>
+                      </div>
                     </div>
-                  )}
+                  </div>
                   {reviewCount > 0 && (
                     <div className="absolute top-2 left-2 z-10 bg-brand-green text-brand-gold text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                       <span>★</span>
                       <span>{reviewCount}</span>
                     </div>
                   )}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                    <p className="font-bold text-white text-sm truncate">{product.name}</p>
-                    {product.code && <p className="text-xs text-white/50 font-mono truncate">{product.code}</p>}
-                    <div className="flex justify-between mt-0.5">
-                      <span className="text-xs text-white/70">{stock} left</span>
-                      <span className={`text-xs font-semibold ${profit >= 0 ? 'text-brand-gold' : 'text-red-400'}`}>
-                        ₹{profit.toFixed(0)}
-                      </span>
-                    </div>
-                  </div>
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     <button
                       type="button"
