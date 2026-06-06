@@ -7,12 +7,12 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
       onClick={onClose}
     >
       <div
-        className="relative w-full"
-        style={{ height: '60vh' }}
+        className="relative w-full bg-black"
+        style={{ height: '65vh' }}
         onClick={e => e.stopPropagation()}
       >
         {allMedia.length > 0 ? (
-          <MediaSlider items={allMedia} />
+          <MediaSlider items={allMedia} alwaysShowArrows objectFit="contain" />
         ) : (
           <div className="w-full h-full bg-brand-green/20 flex items-center justify-center">
             <span className="text-7xl font-bold text-brand-green/30">

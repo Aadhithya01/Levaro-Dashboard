@@ -6,6 +6,17 @@ import AddProductModal from '../components/AddProductModal'
 import EditProductModal from '../components/EditProductModal'
 import DeleteProductModal from '../components/DeleteProductModal'
 import AddPurchaseModal from '../components/AddPurchaseModal'
+import MediaSlider from '../components/MediaSlider'
+
+function buildMedia(product) {
+  const items = []
+  if (product.image_url) items.push({ url: product.image_url, type: 'image' })
+  ;(product.product_images ?? [])
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .forEach(img => items.push({ url: img.media_url, type: img.media_type }))
+  return items
+}
 
 const PencilIcon = () => (
   <svg className="w-3.5 h-3.5 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +62,7 @@ export default function Products() {
       supabase.from('categories').select('name').eq('id', categoryId).single(),
       supabase
         .from('products')
-        .select('*, purchases(quantity, price_per_piece), sales(quantity_sold, selling_price), product_reviews(count)')
+        .select('*, purchases(quantity, price_per_piece), sales(quantity_sold, selling_price), product_reviews(count), product_images(media_url, media_type, sort_order)')
         .eq('category_id', categoryId)
         .order('created_at', { ascending: false }),
     ])
@@ -130,16 +141,17 @@ export default function Products() {
             {products.map(product => {
               const { stock, profit } = computeSummary(product)
               const reviewCount = product.product_reviews?.[0]?.count ?? 0
+              const allMedia = buildMedia(product)
               return (
                 <div
                   key={product.id}
                   onClick={() => navigate(`/products/${product.id}`)}
                   className="relative group aspect-square rounded-xl cursor-pointer ring-2 ring-transparent hover:ring-brand-green transition-all shadow-sm"
                 >
-                  {/* Image layer — overflow-hidden scoped here so it doesn't clip the hover buttons */}
+                  {/* Image layer — overflow-hidden scoped here so hover buttons above are never clipped */}
                   <div className="absolute inset-0 rounded-xl overflow-hidden">
-                    {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                    {allMedia.length > 0 ? (
+                      <MediaSlider items={allMedia} />
                     ) : (
                       <div className="w-full h-full bg-brand-green/20 flex items-center justify-center">
                         <span className="text-4xl font-bold text-brand-green/40">
@@ -147,7 +159,7 @@ export default function Products() {
                         </span>
                       </div>
                     )}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 z-10">
                       <p className="font-bold text-white text-sm truncate">{product.name}</p>
                       {product.code && <p className="text-xs text-white/50 font-mono truncate">{product.code}</p>}
                       <div className="flex justify-between mt-0.5">
