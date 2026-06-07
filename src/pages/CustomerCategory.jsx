@@ -89,14 +89,10 @@ export default function CustomerCategory() {
               return (
                 <div
                   key={product.id}
-                  onClick={() => !soldOut && setViewingProduct({ product, allMedia, soldOut })}
-                  className={`rounded-2xl overflow-hidden bg-white border shadow-sm transition-all ${
-                    soldOut
-                      ? 'border-brand-border opacity-60 cursor-not-allowed'
-                      : 'border-brand-border hover:border-brand-green hover:shadow-md cursor-pointer'
-                  }`}
+                  onClick={() => setViewingProduct({ product, allMedia, soldOut })}
+                  className="rounded-2xl overflow-hidden bg-white border border-brand-border shadow-sm transition-all hover:border-brand-green hover:shadow-md cursor-pointer"
                 >
-                  <div className="relative aspect-square">
+                  <div className={`relative aspect-square ${soldOut ? 'opacity-60' : ''}`}>
                     {allMedia.length > 0 ? (
                       <MediaSlider items={allMedia} />
                     ) : (
