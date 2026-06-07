@@ -6,7 +6,7 @@ import {
 } from 'recharts'
 
 function downloadCSV(rows, month) {
-  const headers = ['Product', 'Sale Date', 'Qty Sold', 'Cost Price (₹)', 'Selling Price (₹)', 'Revenue (₹)']
+  const headers = ['Product', 'Sale Date', 'Qty Sold', 'Cost Price (₹)', 'Selling Price (₹)', 'Revenue (₹)', 'Payment']
   const csv = [
     headers.join(','),
     ...rows.map(r => [
@@ -16,6 +16,7 @@ function downloadCSV(rows, month) {
       r.avgCostPrice.toFixed(2),
       r.sellingPrice.toFixed(2),
       r.revenue.toFixed(2),
+      r.paymentReceived ? 'Received' : 'Pending',
     ].join(','))
   ].join('\n')
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
@@ -39,7 +40,7 @@ export default function Dashboard() {
     async function fetchAll() {
       const { data } = await supabase
         .from('products')
-        .select('*, purchases(quantity, price_per_piece), sales(quantity_sold, selling_price, sale_date)')
+        .select('*, purchases(quantity, price_per_piece), sales(quantity_sold, selling_price, sale_date, payment_received)')
       const prods = data ?? []
       setProducts(prods)
 
@@ -95,6 +96,7 @@ export default function Dashboard() {
       sellingPrice: s.selling_price,
       avgCostPrice,
       revenue: s.quantity_sold * s.selling_price,
+      paymentReceived: s.payment_received ?? true,
     }))
   }).sort((a, b) => b.saleDate.localeCompare(a.saleDate))
 
@@ -111,6 +113,79 @@ export default function Dashboard() {
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-10">
         <h1 className="text-xl font-bold text-brand-green">Dashboard</h1>
+
+        {/* Sales Transactions — at top */}
+        <div>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xs font-semibold text-brand-green uppercase tracking-widest">Sales Transactions</h2>
+              {months.length > 0 && (
+                <select
+                  value={activeMonth}
+                  onChange={e => setSelectedMonth(e.target.value)}
+                  className="text-xs border border-brand-border rounded px-2 py-1 text-gray-600 focus:outline-none focus:ring-1 focus:ring-brand-green"
+                >
+                  {months.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              )}
+              {filteredSales.length > 0 && (
+                <span className="text-xs text-gray-400">
+                  {filteredSales.length} sale{filteredSales.length !== 1 ? 's' : ''} · ₹{monthRevenue.toFixed(0)} revenue
+                </span>
+              )}
+            </div>
+            {filteredSales.length > 0 && (
+              <button
+                type="button"
+                onClick={() => downloadCSV(filteredSales, activeMonth)}
+                className="flex items-center gap-1.5 text-xs bg-brand-green text-brand-gold px-3 py-1.5 rounded hover:opacity-90 transition-opacity"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download CSV
+              </button>
+            )}
+          </div>
+          {filteredSales.length === 0 ? (
+            <p className="text-gray-400 text-sm py-6 text-center">No sales for this period.</p>
+          ) : (
+            <div className="bg-white rounded-lg border border-brand-border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-brand-green">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-brand-gold font-medium">Product</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Date</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Qty</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Cost Price</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Selling Price</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Revenue</th>
+                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Payment</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-brand-border">
+                  {filteredSales.map((s, i) => (
+                    <tr key={i} className="hover:bg-brand-cream">
+                      <td className="px-4 py-3 font-medium text-gray-800">{s.productName}</td>
+                      <td className="px-4 py-3 text-right text-gray-500">{s.saleDate}</td>
+                      <td className="px-4 py-3 text-right text-gray-700">{s.quantitySold}</td>
+                      <td className="px-4 py-3 text-right text-gray-600">₹{s.avgCostPrice.toFixed(0)}</td>
+                      <td className="px-4 py-3 text-right text-gray-700">₹{Number(s.sellingPrice).toFixed(0)}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-brand-green">₹{s.revenue.toFixed(0)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <span className={`inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full ${s.paymentReceived ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                          {s.paymentReceived ? 'Received' : 'Pending'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-4 gap-4">
           {[
@@ -174,74 +249,6 @@ export default function Dashboard() {
               </ResponsiveContainer>
             )}
           </div>
-        </div>
-
-        {/* Sales Transactions */}
-        <div>
-          <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xs font-semibold text-brand-green uppercase tracking-widest">Sales Transactions</h2>
-              {months.length > 0 && (
-                <select
-                  value={activeMonth}
-                  onChange={e => setSelectedMonth(e.target.value)}
-                  className="text-xs border border-brand-border rounded px-2 py-1 text-gray-600 focus:outline-none focus:ring-1 focus:ring-brand-green"
-                >
-                  {months.map(m => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              )}
-              {filteredSales.length > 0 && (
-                <span className="text-xs text-gray-400">
-                  {filteredSales.length} sale{filteredSales.length !== 1 ? 's' : ''} · ₹{monthRevenue.toFixed(0)} revenue
-                </span>
-              )}
-            </div>
-            {filteredSales.length > 0 && (
-              <button
-                type="button"
-                onClick={() => downloadCSV(filteredSales, activeMonth)}
-                className="flex items-center gap-1.5 text-xs bg-brand-green text-brand-gold px-3 py-1.5 rounded hover:opacity-90 transition-opacity"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download CSV
-              </button>
-            )}
-          </div>
-
-          {filteredSales.length === 0 ? (
-            <p className="text-gray-400 text-sm py-6 text-center">No sales for this period.</p>
-          ) : (
-            <div className="bg-white rounded-lg border border-brand-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-brand-green">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-brand-gold font-medium">Product</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Date</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Qty</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Cost Price</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Selling Price</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Revenue</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-brand-border">
-                  {filteredSales.map((s, i) => (
-                    <tr key={i} className="hover:bg-brand-cream">
-                      <td className="px-4 py-3 font-medium text-gray-800">{s.productName}</td>
-                      <td className="px-4 py-3 text-right text-gray-500">{s.saleDate}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">{s.quantitySold}</td>
-                      <td className="px-4 py-3 text-right text-gray-600">₹{s.avgCostPrice.toFixed(0)}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">₹{Number(s.sellingPrice).toFixed(0)}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-brand-green">₹{s.revenue.toFixed(0)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
 
       </div>

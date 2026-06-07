@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 
 export default function AddSaleModal({ productId, defaultSellingPrice, onClose, onAdded }) {
   const [form, setForm] = useState({ sale_date: '', quantity_sold: '', selling_price: defaultSellingPrice != null ? String(defaultSellingPrice) : '' })
+  const [paymentReceived, setPaymentReceived] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -16,6 +17,7 @@ export default function AddSaleModal({ productId, defaultSellingPrice, onClose, 
       sale_date: form.sale_date,
       quantity_sold: parseInt(form.quantity_sold),
       selling_price: parseFloat(form.selling_price),
+      payment_received: paymentReceived,
     })
     setLoading(false)
     if (error) { setError(error.message); return }
@@ -44,6 +46,25 @@ export default function AddSaleModal({ productId, defaultSellingPrice, onClose, 
             <input type="number" min="0.01" step="0.01" required value={form.selling_price} onChange={e => set('selling_price', e.target.value)}
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
               placeholder="e.g. 250.00" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setPaymentReceived(true)}
+                className={`flex-1 py-2 rounded text-sm font-medium border transition-colors ${paymentReceived ? 'bg-green-50 border-green-400 text-green-700' : 'border-brand-border text-gray-400 hover:border-gray-400'}`}
+              >
+                Received
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentReceived(false)}
+                className={`flex-1 py-2 rounded text-sm font-medium border transition-colors ${!paymentReceived ? 'bg-red-50 border-red-400 text-red-600' : 'border-brand-border text-gray-400 hover:border-gray-400'}`}
+              >
+                Pending
+              </button>
+            </div>
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex gap-2 justify-end">
