@@ -6,11 +6,21 @@ import AddPurchaseModal from '../components/AddPurchaseModal'
 import EditPurchaseModal from '../components/EditPurchaseModal'
 import AddSaleModal from '../components/AddSaleModal'
 import EditSaleModal from '../components/EditSaleModal'
+import MediaSlider from '../components/MediaSlider'
+import ImageZoomModal from '../components/ImageZoomModal'
+
+const EyeIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+  </svg>
+)
 
 export default function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [product, setProduct] = useState(null)
+  const [productImages, setProductImages] = useState([])
   const [purchases, setPurchases] = useState([])
   const [sales, setSales] = useState([])
   const [loading, setLoading] = useState(true)
@@ -19,18 +29,21 @@ export default function ProductDetail() {
   const [editingPurchase, setEditingPurchase] = useState(null)
   const [editingSale, setEditingSale] = useState(null)
   const [reviews, setReviews] = useState([])
+  const [zoomOpen, setZoomOpen] = useState(false)
 
   async function fetchData() {
-    const [{ data: prod }, { data: purch }, { data: sale }, { data: rev }] = await Promise.all([
+    const [{ data: prod }, { data: purch }, { data: sale }, { data: rev }, { data: imgs }] = await Promise.all([
       supabase.from('products').select('*').eq('id', id).single(),
       supabase.from('purchases').select('*').eq('product_id', id).order('date_of_purchase', { ascending: false }),
       supabase.from('sales').select('*').eq('product_id', id).order('sale_date', { ascending: false }),
       supabase.from('product_reviews').select('*').eq('product_id', id).order('created_at', { ascending: false }),
+      supabase.from('product_images').select('media_url, media_type, sort_order').eq('product_id', id).order('sort_order'),
     ])
     setProduct(prod)
     setPurchases(purch ?? [])
     setSales(sale ?? [])
     setReviews(rev ?? [])
+    setProductImages(imgs ?? [])
     setLoading(false)
   }
 
@@ -51,15 +64,37 @@ export default function ProductDetail() {
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-8">
         <button onClick={() => navigate(-1)} className="text-sm text-brand-green hover:underline mb-4 block">← Back</button>
-        {product.image_url && (
-          <img
-            src={product.image_url}
-            alt={product.name}
-            className="w-full h-48 object-cover rounded-lg mb-4"
-            onError={e => { e.currentTarget.style.display = 'none' }}
-          />
+
+        {(() => {
+          const allMedia = []
+          if (product.image_url) allMedia.push({ url: product.image_url, type: 'image' })
+          productImages.forEach(img => allMedia.push({ url: img.media_url, type: img.media_type }))
+          return allMedia.length > 0 ? (
+            <div className="flex gap-6 items-start mb-6">
+              <div className="relative flex-shrink-0 w-52 h-52 rounded-xl overflow-hidden bg-gray-50 border border-brand-border group">
+                <MediaSlider items={allMedia} objectFit="contain" />
+                <button
+                  type="button"
+                  onClick={() => setZoomOpen(true)}
+                  className="absolute top-2 right-2 bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/70 z-20 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="View full size"
+                >
+                  <EyeIcon />
+                </button>
+              </div>
+              <div className="pt-1">
+                <h1 className="text-xl font-bold text-brand-green mb-1">{product.name}</h1>
+                {product.code && <p className="text-sm text-gray-400 font-mono mb-2">{product.code}</p>}
+                <p className="text-xs text-gray-400">Double-tap or use eye icon to zoom</p>
+              </div>
+              {zoomOpen && <ImageZoomModal items={allMedia} onClose={() => setZoomOpen(false)} />}
+            </div>
+          ) : null
+        })()}
+
+        {!product.image_url && productImages.length === 0 && (
+          <h1 className="text-xl font-bold text-brand-green mb-2">{product.name}</h1>
         )}
-        <h1 className="text-xl font-bold text-brand-green mb-2">{product.name}</h1>
 
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[
