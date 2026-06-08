@@ -11,7 +11,6 @@ import Welcome from './pages/Welcome'
 import CustomerShop from './pages/CustomerShop'
 import CustomerCategory from './pages/CustomerCategory'
 import SetPrices from './pages/SetPrices'
-import Settings from './pages/Settings'
 
 export default function App() {
   return (
@@ -25,7 +24,6 @@ export default function App() {
       <Route path="/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
       <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
       <Route path="/set-prices" element={<ProtectedRoute><SetPrices /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/shop" element={<CustomerShop />} />
       <Route path="/shop/:categoryId" element={<CustomerCategory />} />
       <Route path="*" element={<Navigate to="/" replace />} />
