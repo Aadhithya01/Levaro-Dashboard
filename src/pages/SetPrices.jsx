@@ -12,15 +12,17 @@ export default function SetPrices() {
   useEffect(() => {
     supabase
       .from('products')
-      .select('id, name, selling_price, categories(name)')
+      .select('id, name, image_url, purchases(quantity, price_per_piece), categories(name)')
       .is('selling_price', null)
       .order('name')
       .then(({ data }) => {
         const g = {}
         ;(data ?? []).forEach(p => {
           const cat = p.categories?.name ?? 'Uncategorised'
+          const totalQty = (p.purchases ?? []).reduce((s, x) => s + x.quantity, 0)
+          const totalCost = (p.purchases ?? []).reduce((s, x) => s + x.quantity * x.price_per_piece, 0)
           if (!g[cat]) g[cat] = []
-          g[cat].push(p)
+          g[cat].push({ ...p, avgCost: totalQty > 0 ? totalCost / totalQty : null })
         })
         setGroups(g)
         setLoading(false)
@@ -42,7 +44,6 @@ export default function SetPrices() {
     )
     setSavedCount(entries.length)
     setSaving(false)
-    // Remove saved products from groups
     const savedIds = new Set(entries.map(([id]) => id))
     setGroups(prev => {
       const next = {}
@@ -61,12 +62,12 @@ export default function SetPrices() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-3xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold text-brand-green">Set Product Prices</h1>
             <p className="text-sm text-gray-400 mt-1">
-              {loading ? 'Loading...' : `${totalRemaining} products need a price`}
+              {loading ? 'Loading...' : `${totalRemaining} product${totalRemaining !== 1 ? 's' : ''} need a selling price`}
             </p>
           </div>
           {!loading && totalRemaining > 0 && (
@@ -76,14 +77,15 @@ export default function SetPrices() {
               disabled={saving || filledCount === 0}
               className="px-5 py-2 bg-brand-green text-brand-gold text-sm font-semibold rounded hover:opacity-90 disabled:opacity-40"
             >
-              {saving ? 'Saving...' : `Save ${filledCount > 0 ? filledCount : ''} Price${filledCount !== 1 ? 's' : ''}`}
+              {saving ? 'Saving...' : `Save ${filledCount > 0 ? filledCount + ' ' : ''}Price${filledCount !== 1 ? 's' : ''}`}
             </button>
           )}
         </div>
 
         {savedCount !== null && (
-          <div className="mb-4 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700">
-            {savedCount} price{savedCount !== 1 ? 's' : ''} saved. {totalRemaining > 0 ? `${totalRemaining} still need a price.` : 'All done!'}
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700">
+            {savedCount} price{savedCount !== 1 ? 's' : ''} saved.{' '}
+            {totalRemaining > 0 ? `${totalRemaining} still need a price.` : ' All done!'}
           </div>
         )}
 
@@ -97,37 +99,79 @@ export default function SetPrices() {
             <p className="text-gray-400 text-sm mt-1">Every product now shows a price in the customer shop.</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)).map(([category, products]) => (
-              <div key={category} className="bg-white rounded-lg border border-brand-border overflow-hidden">
-                <div className="bg-brand-green px-4 py-2">
-                  <h2 className="text-brand-gold text-xs font-bold uppercase tracking-wider">{category}</h2>
-                </div>
-                <table className="w-full">
-                  <tbody className="divide-y divide-brand-border">
-                    {products.map(product => (
-                      <tr key={product.id} className="hover:bg-brand-cream">
-                        <td className="px-4 py-3 text-sm text-gray-800 font-medium">{product.name}</td>
-                        <td className="px-4 py-3 w-36">
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₹</span>
-                            <input
-                              type="number"
-                              min="0.01"
-                              step="0.01"
-                              value={prices[product.id] ?? ''}
-                              onChange={e => setPrice(product.id, e.target.value)}
-                              placeholder="0.00"
-                              className="w-full border border-brand-border rounded pl-7 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
-                            />
+              <div key={category}>
+                <h2 className="text-xs font-bold text-brand-green uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-4 bg-brand-green rounded-full" />
+                  {category}
+                  <span className="text-gray-400 font-normal normal-case tracking-normal">{products.length} product{products.length !== 1 ? 's' : ''}</span>
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {products.map(product => (
+                    <div key={product.id} className="bg-white rounded-xl border border-brand-border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                      {/* Image */}
+                      <div className="aspect-square bg-brand-green/5">
+                        {product.image_url ? (
+                          <img
+                            src={product.image_url}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <span className="text-4xl font-bold text-brand-green/20">
+                              {product.name.charAt(0).toUpperCase()}
+                            </span>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        )}
+                      </div>
+
+                      {/* Info + price input */}
+                      <div className="p-3 space-y-2">
+                        <p className="text-sm font-semibold text-gray-800 leading-tight line-clamp-2">
+                          {product.name}
+                        </p>
+
+                        {product.avgCost != null && (
+                          <p className="text-xs text-gray-400">
+                            Cost: <span className="text-gray-600 font-medium">₹{product.avgCost.toFixed(0)}</span>
+                          </p>
+                        )}
+
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">₹</span>
+                          <input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={prices[product.id] ?? ''}
+                            onChange={e => setPrice(product.id, e.target.value)}
+                            placeholder="Selling price"
+                            className="w-full border border-brand-border rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Sticky save bar when prices are filled */}
+        {filledCount > 0 && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-brand-green text-brand-gold px-6 py-3 rounded-full shadow-xl flex items-center gap-3 text-sm font-semibold">
+            <span>{filledCount} price{filledCount !== 1 ? 's' : ''} ready</span>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-brand-gold text-brand-green px-4 py-1.5 rounded-full text-sm font-bold hover:opacity-90 disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save All'}
+            </button>
           </div>
         )}
       </div>
