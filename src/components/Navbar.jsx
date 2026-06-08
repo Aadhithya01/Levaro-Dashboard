@@ -13,6 +13,8 @@ export default function Navbar() {
   const dashActive = pathname.startsWith('/dashboard')
   const ledgerActive = pathname.startsWith('/ledger')
   const tasksActive = pathname.startsWith('/tasks')
+  const pricesActive = pathname.startsWith('/set-prices')
+  const settingsActive = pathname.startsWith('/settings')
 
   const avatarUrl = user?.user_metadata?.avatar_url
   const initials = user?.email?.[0]?.toUpperCase() ?? '?'
@@ -44,6 +46,18 @@ export default function Navbar() {
           className={`text-sm transition-colors ${tasksActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
         >
           Tasks
+        </Link>
+        <Link
+          to="/set-prices"
+          className={`text-sm transition-colors ${pricesActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
+        >
+          Set Prices
+        </Link>
+        <Link
+          to="/settings"
+          className={`text-sm transition-colors ${settingsActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
+        >
+          Settings
         </Link>
       </div>
       <div className="flex items-center gap-3">
