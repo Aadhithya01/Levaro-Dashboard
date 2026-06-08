@@ -94,7 +94,7 @@ export default function MediaUploadSection({ items, onChange, maxItems = 10 }) {
                   ▶
                 </div>
               )}
-              {!item.removable && (
+              {item.isMainImage && (
                 <div className="absolute top-0.5 left-0.5 bg-black/40 rounded px-1 text-white text-[9px]">
                   main
                 </div>

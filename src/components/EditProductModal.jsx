@@ -10,6 +10,7 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
   )
   const [mediaItems, setMediaItems] = useState([])
   const [removedIds, setRemovedIds] = useState([])
+  const [mainImageRemoved, setMainImageRemoved] = useState(false)
   const [mediaLoading, setMediaLoading] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -36,7 +37,8 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
           previewUrl: product.image_url,
           type: 'image',
           isExisting: true,
-          removable: false,
+          removable: true,
+          isMainImage: true,
         })
       }
       rows.forEach(row => {
@@ -56,8 +58,13 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
   }, [product.id, product.image_url])
 
   function handleMediaChange(newItems) {
+    // Detect if the main image was removed
+    if (!mainImageRemoved && mediaItems.some(i => i.isMainImage) && !newItems.some(i => i.isMainImage)) {
+      setMainImageRemoved(true)
+    }
+    // Track removed product_images rows (not the main image — handled separately)
     const removedFromCurrent = mediaItems.filter(
-      old => old.isExisting && old.removable && !newItems.some(n => n.id === old.id)
+      old => old.isExisting && old.removable && !old.isMainImage && !newItems.some(n => n.id === old.id)
     )
     if (removedFromCurrent.length) {
       setRemovedIds(prev => [...prev, ...removedFromCurrent.map(r => r.id)])
@@ -92,8 +99,15 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
     }
 
     // Determine new image_url
-    let newImageUrl = product.image_url
+    let newImageUrl = mainImageRemoved ? null : product.image_url
     let extraStartIdx = 0
+
+    // Clean up old main image storage object if it was removed
+    if (mainImageRemoved && product.image_url) {
+      const oldPath = product.image_url.split('/product-images/')[1]
+      if (oldPath) await supabase.storage.from('product-images').remove([oldPath])
+    }
+
     if (!newImageUrl && uploadedItems.length > 0) {
       newImageUrl = uploadedItems[0].url
       extraStartIdx = 1
