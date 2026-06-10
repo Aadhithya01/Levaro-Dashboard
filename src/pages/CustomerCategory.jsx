@@ -7,6 +7,8 @@ import FloatingSuggestionButton from '../components/customer/FloatingSuggestionB
 import ReviewModal from '../components/customer/ReviewModal'
 import MediaSlider from '../components/MediaSlider'
 import ProductMediaModal from '../components/customer/ProductMediaModal'
+import Marquee from '../components/customer/Marquee'
+import CursorAccent from '../components/customer/CursorAccent'
 
 function buildMedia(product) {
   const items = []
@@ -48,65 +50,64 @@ export default function CustomerCategory() {
   }, [categoryId])
 
   return (
-    <div className="min-h-screen bg-brand-cream flex flex-col levaro-shop">
+    <div className="min-h-screen levaro-shop levaro-canvas flex flex-col">
+      <CursorAccent />
 
-      {/* ── Header ─────────────────────────────── */}
-      <header className="bg-brand-green relative overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-[0.06] pointer-events-none"
-          style={{ backgroundImage: 'radial-gradient(circle, #e8c96a 1px, transparent 1px)', backgroundSize: '20px 20px' }}
-        />
-        <div className="relative max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
-          <button
-            onClick={() => navigate('/shop')}
-            className="text-brand-gold/60 hover:text-brand-gold transition-colors flex items-center gap-1.5"
-            style={{ fontSize: '0.75rem', letterSpacing: '0.1em' }}
-          >
-            <span>←</span>
-            <span className="uppercase tracking-widest" style={{ fontSize: '0.65rem' }}>Collections</span>
-          </button>
-          <span
-            className="levaro-display text-brand-gold"
-            style={{ fontSize: '1.3rem', fontWeight: 300, letterSpacing: '0.4em' }}
-          >
-            LEVARO
-          </span>
-          <div className="w-24" />
-        </div>
+      {/* ── Top bar ─────────────────────────────── */}
+      <header
+        className="sticky top-0 z-30 flex items-center justify-between px-5 md:px-8 py-4"
+        style={{ backdropFilter: 'blur(6px)', background: 'rgba(12,44,33,0.9)', borderBottom: '1px solid rgba(232,201,106,0.14)' }}
+      >
+        <button
+          onClick={() => navigate('/shop')}
+          data-hover
+          className="flex items-center gap-1.5 text-brand-gold/60 hover:text-brand-gold transition-colors"
+        >
+          <span>←</span>
+          <span className="uppercase" style={{ fontSize: '0.6rem', letterSpacing: '0.28em' }}>Collections</span>
+        </button>
+        <span className="levaro-display text-brand-gold" style={{ fontSize: '1.05rem', fontWeight: 300, letterSpacing: '0.4em' }}>
+          LEVARO
+        </span>
+        <div className="w-24" />
       </header>
 
-      {/* ── Products ───────────────────────────── */}
-      <main className="max-w-5xl mx-auto px-6 py-10 flex-1">
+      <Marquee />
+
+      {/* ── Products ────────────────────────────── */}
+      <main className="max-w-[1200px] w-full mx-auto px-5 md:px-8 py-12 md:py-16 flex-1 relative z-[3]">
 
         {/* Category heading */}
-        <div className="flex items-center gap-4 mb-8 levaro-fade">
-          <span className="flex-1 h-px bg-brand-border" />
-          <p
-            className="levaro-display text-brand-green uppercase"
-            style={{ fontSize: '0.7rem', letterSpacing: '0.45em', fontWeight: 500 }}
-          >
-            {category?.name ?? ''}
-          </p>
-          <span className="flex-1 h-px bg-brand-border" />
+        <div className="flex flex-col items-center mb-10 md:mb-14 levaro-fade gap-2">
+          <div className="flex items-center gap-4 w-full max-w-2xl">
+            <span className="flex-1 h-px bg-brand-gold/20" />
+            <p className="levaro-display text-brand-gold uppercase text-center" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.4rem)', letterSpacing: '0.18em', fontWeight: 300 }}>
+              {category?.name ?? ''}
+            </p>
+            <span className="flex-1 h-px bg-brand-gold/20" />
+          </div>
+          {!loading && products.length > 0 && (
+            <p className="levaro-display text-brand-cream/45" style={{ fontSize: '0.8rem', fontStyle: 'italic' }}>
+              {products.length} {products.length === 1 ? 'piece' : 'pieces'}
+            </p>
+          )}
         </div>
 
         {loading ? (
           <div className="flex justify-center py-24">
-            <div className="w-5 h-5 rounded-full border-2 border-brand-green border-t-transparent animate-spin" />
+            <div className="w-5 h-5 rounded-full border-2 border-brand-gold border-t-transparent animate-spin" />
           </div>
         ) : products.length === 0 ? (
-          <p
-            className="levaro-display text-gray-400 text-center py-24"
-            style={{ fontStyle: 'italic', fontSize: '1.1rem' }}
-          >
+          <p className="levaro-display text-brand-cream/40 text-center py-24" style={{ fontStyle: 'italic', fontSize: '1.1rem' }}>
             No pieces in this collection yet.
           </p>
         ) : (
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {products.map((product, i) => {
               const totalQty = (product.purchases ?? []).reduce((sum, p) => sum + p.quantity, 0)
               const soldQty = (product.sales ?? []).reduce((sum, s) => sum + s.quantity_sold, 0)
-              const soldOut = totalQty - soldQty <= 0
+              const stockLeft = totalQty - soldQty
+              const soldOut = stockLeft <= 0
               const reviewRatings = product.product_reviews ?? []
               const reviewCount = reviewRatings.length
               const avgRating = reviewCount > 0
@@ -117,30 +118,32 @@ export default function CustomerCategory() {
               return (
                 <div
                   key={product.id}
+                  data-hover
                   onClick={() => setViewingProduct({ product, allMedia, soldOut })}
-                  className="levaro-card-enter bg-white rounded-2xl overflow-hidden cursor-pointer group border border-brand-border/60 hover:border-brand-green/30 hover:shadow-xl transition-all duration-400"
-                  style={{ animationDelay: `${i * 0.06}s` }}
+                  className="levaro-card-enter group bg-brand-cream rounded-sm overflow-hidden cursor-pointer transition-transform duration-500 hover:-translate-y-1.5"
+                  style={{ animationDelay: `${i * 0.05}s`, boxShadow: '0 12px 40px rgba(0,0,0,0.25)' }}
                 >
                   {/* Image */}
-                  <div className={`relative aspect-square ${soldOut ? 'opacity-55' : ''}`}>
+                  <div className={`relative overflow-hidden ${soldOut ? 'opacity-60' : ''}`} style={{ aspectRatio: '0.82' }}>
                     {allMedia.length > 0 ? (
                       <MediaSlider items={allMedia} />
                     ) : (
-                      <div className="w-full h-full bg-brand-green/5 flex items-center justify-center">
-                        <span
-                          className="levaro-display text-brand-green/20"
-                          style={{ fontSize: '3.5rem', fontWeight: 300 }}
-                        >
+                      <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #d9c9b0, #b89c7e)' }}>
+                        <span className="levaro-display text-brand-green/30" style={{ fontSize: '3.5rem', fontWeight: 300 }}>
                           {product.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    {!soldOut && stockLeft > 0 && stockLeft <= 3 && (
+                      <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
+                        <span className="text-white font-semibold uppercase rounded-full px-2.5 py-0.5" style={{ background: '#d4a853', fontSize: '0.55rem', letterSpacing: '0.12em' }}>
+                          Only {stockLeft} left
                         </span>
                       </div>
                     )}
                     {soldOut && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/10 pointer-events-none">
-                        <span
-                          className="bg-black/60 text-white uppercase px-4 py-1.5 rounded-full"
-                          style={{ fontSize: '0.6rem', letterSpacing: '0.35em' }}
-                        >
+                        <span className="bg-black/60 text-white uppercase px-4 py-1.5 rounded-full" style={{ fontSize: '0.6rem', letterSpacing: '0.35em' }}>
                           Sold Out
                         </span>
                       </div>
@@ -148,39 +151,37 @@ export default function CustomerCategory() {
                   </div>
 
                   {/* Info */}
-                  <div className="px-3.5 pt-3 pb-3.5">
-                    <p
-                      className="levaro-display text-gray-800 truncate leading-snug"
-                      style={{ fontSize: '1.05rem', fontWeight: 400, letterSpacing: '0.02em' }}
-                    >
+                  <div className="px-3.5 pt-3 pb-4">
+                    <h4 className="levaro-display text-gray-800 truncate leading-snug" style={{ fontSize: '1.2rem', fontWeight: 500, letterSpacing: '0.01em' }}>
                       {product.name}
-                    </p>
-
-                    <p
-                      className="mt-1 font-semibold"
-                      style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.95rem', color: '#1a5c45' }}
-                    >
+                    </h4>
+                    <p className="mt-0.5 font-semibold" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.95rem', color: '#1a5c45' }}>
                       {product.selling_price != null
                         ? `₹${Number(product.selling_price).toFixed(0)}`
-                        : <span style={{ color: '#9ca3af', fontWeight: 400, fontSize: '0.8rem' }}>Price on request</span>
-                      }
+                        : <span style={{ color: '#9ca3af', fontWeight: 400, fontSize: '0.8rem' }}>Price on request</span>}
                     </p>
 
-                    <div className="mt-2.5 flex items-center justify-between gap-2">
+                    <div className="mt-3 flex items-center justify-between gap-2">
                       {avgRating ? (
-                        <span className="flex items-center gap-1" style={{ fontSize: '0.7rem', color: '#6b7280' }}>
-                          <span style={{ color: '#e8c96a' }}>★</span>
-                          <span style={{ fontWeight: 600, color: '#374151' }}>{avgRating}</span>
-                          <span style={{ color: '#9ca3af' }}>({reviewCount})</span>
+                        <span className="flex items-center gap-1">
+                          <span className="flex">
+                            {[1, 2, 3, 4, 5].map(s => (
+                              <svg key={s} className="w-2.5 h-2.5" viewBox="0 0 20 20" fill={s <= Math.round(parseFloat(avgRating)) ? '#d4a853' : '#e5e7eb'}>
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </span>
+                          <span style={{ fontWeight: 600, color: '#374151', fontSize: '0.65rem' }}>{avgRating}</span>
+                          <span style={{ color: '#9ca3af', fontSize: '0.62rem' }}>({reviewCount})</span>
                         </span>
                       ) : (
-                        <span style={{ fontSize: '0.7rem', color: '#d1d5db' }}>No reviews</span>
+                        <span style={{ fontSize: '0.65rem', color: '#9ca3af' }}>No reviews</span>
                       )}
                       <button
                         type="button"
                         onClick={e => { e.stopPropagation(); setReviewingProduct({ id: product.id, name: product.name }) }}
-                        className="border border-brand-green/50 text-brand-green rounded-lg px-2.5 py-1 hover:bg-brand-green hover:text-brand-gold transition-all duration-200"
-                        style={{ fontSize: '0.65rem', letterSpacing: '0.05em', fontWeight: 600 }}
+                        className="border border-brand-green/50 text-brand-green rounded-md px-2.5 py-1 hover:bg-brand-green hover:text-brand-gold transition-all duration-200"
+                        style={{ fontSize: '0.62rem', letterSpacing: '0.05em', fontWeight: 600 }}
                       >
                         ★ Review
                       </button>

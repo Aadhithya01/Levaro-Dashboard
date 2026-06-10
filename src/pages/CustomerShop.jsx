@@ -1,142 +1,231 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import CustomerFooter from '../components/customer/CustomerFooter'
 import FloatingFeedbackButton from '../components/customer/FloatingFeedbackButton'
 import FloatingSuggestionButton from '../components/customer/FloatingSuggestionButton'
+import Marquee from '../components/customer/Marquee'
+import CursorAccent from '../components/customer/CursorAccent'
+import { tileSpan, tileIndexLabel } from '../lib/collectionGrid'
 
 export default function CustomerShop() {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
+  const [scrolled, setScrolled] = useState(false)
   const navigate = useNavigate()
+  const gridRef = useRef(null)
 
   useEffect(() => {
     supabase
       .from('categories')
-      .select('id, name, image_url')
+      .select('id, name, image_url, is_hero, products(id)')
       .order('created_at', { ascending: true })
       .then(({ data }) => { setCategories(data ?? []); setLoading(false) })
   }, [])
 
-  return (
-    <div className="min-h-screen bg-brand-cream levaro-shop">
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 60)
+    window.addEventListener('scroll', onScroll)
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
-      {/* ── Header ─────────────────────────────── */}
-      <header className="bg-brand-green relative overflow-hidden">
-        {/* Subtle dot-grid texture */}
-        <div
-          className="absolute inset-0 opacity-[0.06] pointer-events-none"
-          style={{ backgroundImage: 'radial-gradient(circle, #e8c96a 1px, transparent 1px)', backgroundSize: '20px 20px' }}
-        />
-        <div className="relative px-6 py-10 text-center levaro-fade" style={{ animationDelay: '0.05s' }}>
-          <p className="text-brand-gold/40 text-[9px] tracking-[0.55em] uppercase mb-4">Est. 2024</p>
-          <h1
-            className="levaro-display text-brand-gold"
-            style={{ fontSize: '2.6rem', fontWeight: 300, letterSpacing: '0.45em', lineHeight: 1 }}
-          >
-            LEVARO
-          </h1>
-          <div className="flex items-center justify-center gap-3 mt-4">
-            <span className="block w-10 h-px bg-brand-gold/30" />
-            <p
-              className="levaro-display text-brand-gold/55 tracking-wide"
-              style={{ fontSize: '0.95rem', fontStyle: 'italic', fontWeight: 300 }}
+  // Reveal tiles on scroll into view
+  useEffect(() => {
+    if (loading) return
+    const tiles = gridRef.current?.querySelectorAll('[data-tile]') ?? []
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          setTimeout(() => e.target.classList.add('levaro-rise'), i * 80)
+          io.unobserve(e.target)
+        }
+      })
+    }, { threshold: 0.15 })
+    tiles.forEach(t => io.observe(t))
+    return () => io.disconnect()
+  }, [loading, categories])
+
+  // Hero image: marked hero → newest collection with an image → none
+  const heroCat =
+    categories.find(c => c.is_hero && c.image_url) ||
+    [...categories].reverse().find(c => c.image_url) ||
+    null
+
+  const scrollToCollections = () => {
+    gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  return (
+    <div className="min-h-screen levaro-shop levaro-canvas">
+      <CursorAccent />
+
+      {/* ── Top bar ─────────────────────────────── */}
+      <header
+        className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-5 md:px-8 py-4 transition-colors duration-500"
+        style={{
+          backdropFilter: 'blur(6px)',
+          background: scrolled
+            ? 'rgba(12,44,33,0.92)'
+            : 'linear-gradient(to bottom, rgba(12,44,33,0.75), transparent)',
+        }}
+      >
+        <span className="levaro-display text-brand-gold" style={{ letterSpacing: '0.42em', fontSize: '1.05rem' }}>
+          LEVARO
+        </span>
+        <nav className="hidden md:flex gap-7">
+          {['Collections', 'Lookbook', 'About', 'Contact'].map(l => (
+            <button
+              key={l}
+              onClick={scrollToCollections}
+              className="text-brand-cream/60 hover:text-brand-gold transition-colors uppercase"
+              style={{ fontSize: '0.62rem', letterSpacing: '0.28em' }}
             >
-              Timeless Style. Refined for You.
-            </p>
-            <span className="block w-10 h-px bg-brand-gold/30" />
-          </div>
-        </div>
+              {l}
+            </button>
+          ))}
+        </nav>
       </header>
 
-      {/* ── Collections ───────────────────────── */}
-      <main className="max-w-5xl w-full mx-auto px-6 py-10">
+      {/* Side rail */}
+      <div
+        className="hidden lg:block fixed left-3.5 top-1/2 z-20 uppercase text-brand-gold/40"
+        style={{ writingMode: 'vertical-rl', transform: 'translateY(-50%) rotate(180deg)', fontSize: '0.55rem', letterSpacing: '0.5em' }}
+      >
+        Est. 2024 — Timeless Style
+      </div>
 
-        {/* Section rule */}
-        <div className="flex items-center gap-4 mb-8">
-          <span className="flex-1 h-px bg-brand-border" />
+      {/* ── Hero ────────────────────────────────── */}
+      <section className="relative max-w-[1200px] mx-auto px-5 md:px-8 grid md:grid-cols-[1.15fr_0.85fr] items-center gap-8 pt-28 md:pt-24 md:min-h-screen">
+        <div className="relative z-[5] order-2 md:order-1">
           <p
-            className="levaro-display text-brand-green/70 uppercase"
-            style={{ fontSize: '0.7rem', letterSpacing: '0.45em', fontWeight: 500 }}
+            className="uppercase text-brand-gold/55 mb-6 levaro-fade"
+            style={{ fontSize: '0.6rem', letterSpacing: '0.55em' }}
           >
-            Our Collections
+            The 2026 Atelier Collection
           </p>
-          <span className="flex-1 h-px bg-brand-border" />
+          <h1
+            className="levaro-display text-brand-cream"
+            style={{ fontWeight: 300, lineHeight: 0.92, letterSpacing: '0.02em', fontSize: 'clamp(4rem, 13vw, 11rem)' }}
+          >
+            {'LEVARO'.split('').map((ch, i) => (
+              <span key={i} className="levaro-letter" style={{ animationDelay: `${0.3 + i * 0.07}s` }}>{ch}</span>
+            ))}
+          </h1>
+          <div className="flex items-center gap-4 mt-8 levaro-fade" style={{ animationDelay: '0.9s' }}>
+            <span className="block w-14 h-px" style={{ background: 'linear-gradient(to right, #e8c96a, transparent)' }} />
+            <p className="levaro-display text-brand-cream/80" style={{ fontStyle: 'italic', fontWeight: 300, fontSize: '1.35rem' }}>
+              Timeless style, refined for you.
+            </p>
+          </div>
+          <button
+            onClick={scrollToCollections}
+            data-hover
+            className="group mt-10 inline-flex items-center gap-3.5 levaro-fade"
+            style={{ animationDelay: '1.1s' }}
+          >
+            <span className="uppercase text-brand-gold" style={{ fontSize: '0.65rem', letterSpacing: '0.3em' }}>
+              Explore the collections
+            </span>
+            <span className="w-12 h-12 rounded-full grid place-items-center text-brand-gold transition-all duration-500 group-hover:bg-brand-gold group-hover:text-brand-green group-hover:translate-x-1.5"
+              style={{ border: '1px solid rgba(232,201,106,0.4)' }}>
+              ↓
+            </span>
+          </button>
+        </div>
+
+        {/* Hero art */}
+        <div className="order-1 md:order-2 relative h-[42vh] md:h-[78vh] rounded-sm overflow-hidden levaro-reveal"
+          style={{ background: 'linear-gradient(160deg, #3a6a55, #16402f)', boxShadow: '0 30px 80px rgba(0,0,0,0.45)' }}>
+          {heroCat?.image_url && (
+            <img src={heroCat.image_url} alt={heroCat.name} className="w-full h-full object-cover levaro-zoom" style={{ opacity: 0.92 }} />
+          )}
+          <div className="absolute inset-3.5 pointer-events-none z-[3]" style={{ border: '1px solid rgba(232,201,106,0.35)' }} />
+          <span className="absolute right-5 top-4 z-[4] levaro-display text-brand-gold" style={{ fontSize: '0.8rem', letterSpacing: '0.3em' }}>N° 01</span>
+          {heroCat && (
+            <span className="absolute left-6 bottom-6 z-[4] levaro-display text-white" style={{ fontStyle: 'italic', fontSize: '1.1rem', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
+              {heroCat.name}
+            </span>
+          )}
+        </div>
+      </section>
+
+      {/* ── Marquee ─────────────────────────────── */}
+      <div className="mt-4 md:mt-2 relative z-[3]">
+        <Marquee />
+      </div>
+
+      {/* ── Collections ─────────────────────────── */}
+      <main ref={gridRef} className="max-w-[1200px] mx-auto px-5 md:px-8 pt-16 md:pt-28 pb-20">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-10 md:mb-14">
+          <h2 className="levaro-display text-brand-cream" style={{ fontWeight: 300, lineHeight: 1, fontSize: 'clamp(2.4rem, 5vw, 4rem)' }}>
+            Our <em className="text-brand-gold" style={{ fontStyle: 'italic' }}>Collections</em>
+          </h2>
+          <div className="uppercase text-brand-cream/45 md:text-right" style={{ fontSize: '0.6rem', letterSpacing: '0.3em', lineHeight: 2 }}>
+            Curated seasonal edits<br />
+            {categories.length} {categories.length === 1 ? 'distinct line' : 'distinct lines'}
+          </div>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-24">
-            <div className="w-5 h-5 rounded-full border-2 border-brand-green border-t-transparent animate-spin" />
+            <div className="w-5 h-5 rounded-full border-2 border-brand-gold border-t-transparent animate-spin" />
           </div>
         ) : categories.length === 0 ? (
-          <p className="text-gray-400 text-sm text-center py-24 levaro-display" style={{ fontStyle: 'italic' }}>
+          <p className="text-brand-cream/40 text-center py-24 levaro-display" style={{ fontStyle: 'italic', fontSize: '1.1rem' }}>
             No collections available yet.
           </p>
         ) : (
-          <div className="grid grid-cols-3 gap-5">
-            {categories.map((cat, i) =>
-              cat.image_url ? (
-                <div
-                  key={cat.id}
-                  onClick={() => navigate(`/shop/${cat.id}`)}
-                  className="levaro-card-enter relative aspect-square rounded-2xl overflow-hidden cursor-pointer group"
-                  style={{ animationDelay: `${i * 0.07}s` }}
-                >
+          <div className="grid grid-cols-2 md:grid-cols-6 auto-rows-[120px] md:auto-rows-[140px] gap-3 md:gap-4">
+            {categories.map((cat, i) => (
+              <div
+                key={cat.id}
+                data-tile
+                data-hover
+                onClick={() => navigate(`/shop/${cat.id}`)}
+                className={`group relative overflow-hidden rounded-sm cursor-pointer opacity-0 ${tileSpan(i)}`}
+                style={{ background: 'linear-gradient(160deg, #2f5f4c, #173f2f)' }}
+              >
+                {cat.image_url ? (
                   <img
                     src={cat.image_url}
                     alt={cat.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.07]"
+                    style={{ opacity: 0.9 }}
                   />
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
-                  {/* Gold ring on hover */}
-                  <div className="absolute inset-0 rounded-2xl ring-2 ring-transparent group-hover:ring-brand-gold/50 transition-all duration-400" />
-                  {/* Text */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <p
-                      className="levaro-display text-white leading-tight"
-                      style={{ fontSize: '1.25rem', fontWeight: 400, letterSpacing: '0.06em' }}
-                    >
-                      {cat.name}
-                    </p>
-                    <p
-                      className="text-brand-gold/70 uppercase mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-1"
-                      style={{ fontSize: '0.6rem', letterSpacing: '0.3em' }}
-                    >
-                      Explore <span>→</span>
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  key={cat.id}
-                  onClick={() => navigate(`/shop/${cat.id}`)}
-                  className="levaro-card-enter aspect-square rounded-2xl border border-brand-border bg-white flex flex-col items-center justify-center cursor-pointer group hover:border-brand-green/50 hover:shadow-lg transition-all duration-400"
-                  style={{ animationDelay: `${i * 0.07}s` }}
-                >
-                  <div className="w-14 h-14 rounded-full bg-brand-green/8 flex items-center justify-center mb-3 group-hover:bg-brand-green/15 transition-colors duration-300">
-                    <span
-                      className="levaro-display text-brand-green"
-                      style={{ fontSize: '1.75rem', fontWeight: 300 }}
-                    >
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="levaro-display text-brand-gold/25" style={{ fontSize: '3rem', fontWeight: 300 }}>
                       {cat.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <p
-                    className="levaro-display text-brand-green text-center px-3"
-                    style={{ fontSize: '1rem', fontWeight: 400, letterSpacing: '0.04em' }}
-                  >
+                )}
+                {/* gradient overlay */}
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(8,30,22,0.82) 0%, rgba(8,30,22,0.05) 55%)' }} />
+                {/* gold ring on hover */}
+                <div className="absolute inset-3 pointer-events-none transition-colors duration-400 border border-transparent group-hover:border-brand-gold/55" />
+                {/* index */}
+                <span className="absolute top-3.5 left-4 z-[3] levaro-display text-brand-gold" style={{ fontSize: '0.85rem', letterSpacing: '0.2em' }}>
+                  {tileIndexLabel(i)}
+                </span>
+                {/* info */}
+                <div className="absolute left-4 right-4 bottom-4 z-[3]">
+                  <h3 className="levaro-display text-white leading-tight" style={{ fontWeight: 400, fontSize: i % 5 === 0 ? '1.7rem' : '1.35rem' }}>
                     {cat.name}
-                  </p>
-                  <p
-                    className="text-gray-400 uppercase mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{ fontSize: '0.6rem', letterSpacing: '0.3em' }}
-                  >
-                    Explore
-                  </p>
+                  </h3>
+                  <div className="flex items-center justify-between mt-1.5">
+                    {cat.products?.length > 0 && (
+                      <span className="uppercase text-white/55" style={{ fontSize: '0.58rem', letterSpacing: '0.18em' }}>
+                        {cat.products.length} {cat.products.length === 1 ? 'piece' : 'pieces'}
+                      </span>
+                    )}
+                    <span className="uppercase text-brand-gold ml-auto opacity-0 -translate-x-1.5 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-400"
+                      style={{ fontSize: '0.58rem', letterSpacing: '0.3em' }}>
+                      Explore →
+                    </span>
+                  </div>
                 </div>
-              )
-            )}
+              </div>
+            ))}
           </div>
         )}
       </main>

@@ -40,3 +40,60 @@
 .levaro-fade {
   animation: fadeIn 0.6s ease both;
 }
+
+/* ── Editorial revamp ─────────────────────────────── */
+
+/* Deep-green atmospheric canvas with gold dot-grid + grain */
+.levaro-canvas {
+  background: #0c2c21;
+  color: #f5f0e8;
+  position: relative;
+}
+.levaro-canvas::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.05;
+  background-image: radial-gradient(circle, #e8c96a 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.levaro-canvas::after {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 2; opacity: 0.035; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Hero letters rise into place */
+@keyframes levaroLetter { to { transform: translateY(0); opacity: 1; } }
+.levaro-letter {
+  display: inline-block;
+  transform: translateY(120%);
+  opacity: 0;
+  animation: levaroLetter 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Clip-path wipe reveal for the hero image */
+@keyframes levaroReveal { to { clip-path: inset(0 0 0 0); } }
+.levaro-reveal {
+  clip-path: inset(0 0 100% 0);
+  animation: levaroReveal 1.2s 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Slow zoom-out for hero image */
+@keyframes levaroZoom { from { transform: scale(1.15); } to { transform: scale(1); } }
+.levaro-zoom { animation: levaroZoom 1.6s 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Rise-in (used by hero copy + tiles on scroll) */
+@keyframes levaroRise { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+.levaro-rise { animation: levaroRise 1s forwards; }
+
+/* Marquee scroll (track is duplicated, so -50% loops seamlessly) */
+@keyframes levaroMarquee { to { transform: translateX(-50%); } }
+.levaro-marquee { animation: levaroMarquee 28s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .levaro-letter, .levaro-reveal, .levaro-zoom, .levaro-rise, .levaro-marquee {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+  }
+}

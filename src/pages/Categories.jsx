@@ -18,6 +18,12 @@ const TrashIcon = () => (
   </svg>
 )
 
+const StarIcon = ({ filled }) => (
+  <svg className="w-3.5 h-3.5 text-brand-gold" viewBox="0 0 20 20" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={filled ? 0 : 1.5}>
+    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+  </svg>
+)
+
 export default function Categories() {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
@@ -37,6 +43,17 @@ export default function Categories() {
   }
 
   useEffect(() => { fetchCategories() }, [])
+
+  // Mark a category as the storefront hero (single-true: clears any previous).
+  async function toggleHero(cat) {
+    if (cat.is_hero) {
+      await supabase.from('categories').update({ is_hero: false }).eq('id', cat.id)
+    } else {
+      await supabase.from('categories').update({ is_hero: false }).eq('is_hero', true)
+      await supabase.from('categories').update({ is_hero: true }).eq('id', cat.id)
+    }
+    fetchCategories()
+  }
 
   const totalProducts = categories.reduce((sum, c) => sum + (c.products?.[0]?.count ?? 0), 0)
 
@@ -106,6 +123,14 @@ export default function Categories() {
                   <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10">
                     <button
                       type="button"
+                      title={cat.is_hero ? 'Hero collection' : 'Set as hero'}
+                      onClick={e => { e.stopPropagation(); toggleHero(cat) }}
+                      className="bg-white/90 hover:bg-white rounded-full p-1.5"
+                    >
+                      <StarIcon filled={cat.is_hero} />
+                    </button>
+                    <button
+                      type="button"
                       onClick={e => { e.stopPropagation(); setEditingCategory(cat) }}
                       className="bg-white/90 hover:bg-white rounded-full p-1.5"
                     >
@@ -119,6 +144,11 @@ export default function Categories() {
                       <TrashIcon />
                     </button>
                   </div>
+                  {cat.is_hero && (
+                    <div className="absolute top-2 left-2 z-10 bg-brand-gold text-brand-green text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full pointer-events-none">
+                      Hero
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div
@@ -137,6 +167,14 @@ export default function Categories() {
                   <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10">
                     <button
                       type="button"
+                      title={cat.is_hero ? 'Hero collection' : 'Set as hero'}
+                      onClick={e => { e.stopPropagation(); toggleHero(cat) }}
+                      className="bg-brand-cream hover:bg-brand-border rounded-full p-1.5"
+                    >
+                      <StarIcon filled={cat.is_hero} />
+                    </button>
+                    <button
+                      type="button"
                       onClick={e => { e.stopPropagation(); setEditingCategory(cat) }}
                       className="bg-brand-cream hover:bg-brand-border rounded-full p-1.5"
                     >
@@ -150,6 +188,11 @@ export default function Categories() {
                       <TrashIcon />
                     </button>
                   </div>
+                  {cat.is_hero && (
+                    <div className="absolute top-2 left-2 z-10 bg-brand-gold text-brand-green text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full pointer-events-none">
+                      Hero
+                    </div>
+                  )}
                 </div>
               )
             })}
