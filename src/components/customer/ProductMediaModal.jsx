@@ -24,8 +24,12 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
           style={{ borderRadius: '20px', animationDelay: '0s' }}
           onClick={e => e.stopPropagation()}
         >
-          {/* Image */}
-          <div className="relative aspect-square bg-black">
+          {/* Image — double-click anywhere on it to zoom */}
+          <div
+            className="relative aspect-square bg-black"
+            onDoubleClick={() => allMedia.length > 0 && setZoomOpen(true)}
+            style={{ cursor: allMedia.length > 0 ? 'zoom-in' : 'default' }}
+          >
             {allMedia.length > 0 ? (
               <MediaSlider items={allMedia} alwaysShowArrows objectFit="contain" />
             ) : (
