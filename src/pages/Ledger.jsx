@@ -109,8 +109,8 @@ export default function Ledger() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
           <h1 className="text-xl font-bold text-brand-green">Ledger</h1>
           <div className="flex gap-2">
             <button
@@ -132,7 +132,7 @@ export default function Ledger() {
           <p className="text-gray-500 text-sm">Loading...</p>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
               {pairs.map(({ a, b }) => {
                 const net = netBetween(a.id, b.id, expenses, settlements)
                 const { settled, border, amount: amountColor } = pairColors(a, b, net)
@@ -265,7 +265,7 @@ export default function Ledger() {
       )}
 
       {confirmDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">

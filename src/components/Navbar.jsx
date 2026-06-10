@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import ProfileDropdown from './ProfileDropdown'
 import NavBalance from './NavBalance'
+import MobileNav from './MobileNav'
 
 export default function Navbar() {
   const { user } = useAuth()
@@ -19,39 +20,41 @@ export default function Navbar() {
   const initials = user?.email?.[0]?.toUpperCase() ?? '?'
 
   return (
-    <nav className="bg-brand-green px-6 py-3 flex items-center justify-between">
+    <nav className="bg-brand-green px-4 md:px-6 py-3 flex items-center justify-between">
       <div className="flex items-center gap-6">
         <span className="font-bold text-brand-gold text-lg tracking-widest">LEVARO</span>
-        <Link
-          to="/"
-          className={`text-sm transition-colors ${catActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
-        >
-          Categories
-        </Link>
-        <Link
-          to="/dashboard"
-          className={`text-sm transition-colors ${dashActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
-        >
-          Dashboard
-        </Link>
-        <Link
-          to="/ledger"
-          className={`text-sm transition-colors ${ledgerActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
-        >
-          Ledger
-        </Link>
-        <Link
-          to="/tasks"
-          className={`text-sm transition-colors ${tasksActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
-        >
-          Tasks
-        </Link>
-        <Link
-          to="/set-prices"
-          className={`text-sm transition-colors ${pricesActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
-        >
-          Set Prices
-        </Link>
+        <div className="hidden md:flex items-center gap-6">
+          <Link
+            to="/"
+            className={`text-sm transition-colors ${catActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
+          >
+            Categories
+          </Link>
+          <Link
+            to="/dashboard"
+            className={`text-sm transition-colors ${dashActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
+          >
+            Dashboard
+          </Link>
+          <Link
+            to="/ledger"
+            className={`text-sm transition-colors ${ledgerActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
+          >
+            Ledger
+          </Link>
+          <Link
+            to="/tasks"
+            className={`text-sm transition-colors ${tasksActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
+          >
+            Tasks
+          </Link>
+          <Link
+            to="/set-prices"
+            className={`text-sm transition-colors ${pricesActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
+          >
+            Set Prices
+          </Link>
+        </div>
       </div>
       <div className="flex items-center gap-3">
         <NavBalance />
@@ -69,6 +72,7 @@ export default function Navbar() {
           {showProfile && <ProfileDropdown onClose={() => setShowProfile(false)} />}
         </div>
       </div>
+      <MobileNav />
     </nav>
   )
 }

@@ -43,7 +43,7 @@ export default function Categories() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-brand-green">Categories</h1>
           <button
@@ -86,7 +86,7 @@ export default function Categories() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {categories.map(cat => {
               const count = cat.products?.[0]?.count ?? 0
               return cat.image_url ? (
@@ -103,7 +103,7 @@ export default function Categories() {
                       {cat.code && <span className="text-xs text-white/50">· {cat.code}</span>}
                     </div>
                   </div>
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10">
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); setEditingCategory(cat) }}
@@ -134,7 +134,7 @@ export default function Categories() {
                   <p className="font-semibold text-gray-800 text-sm">{cat.name}</p>
                   {cat.code && <p className="text-xs text-brand-green/60 font-mono mt-0.5">{cat.code}</p>}
                   <p className="text-xs text-gray-400 mt-1">{count} product{count !== 1 ? 's' : ''}</p>
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10">
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); setEditingCategory(cat) }}

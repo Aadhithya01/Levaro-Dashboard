@@ -62,7 +62,7 @@ export default function ProductDetail() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
         <button onClick={() => navigate(-1)} className="text-sm text-brand-green hover:underline mb-4 block">← Back</button>
 
         {(() => {
@@ -96,7 +96,7 @@ export default function ProductDetail() {
           <h1 className="text-xl font-bold text-brand-green mb-2">{product.name}</h1>
         )}
 
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
             { label: 'Stock', value: `${stock} units`, bg: 'bg-brand-green/5 border-brand-green/20', color: 'text-brand-green' },
             { label: 'Total Cost', value: `₹${totalCost.toFixed(2)}`, bg: 'bg-white border-brand-border', color: 'text-gray-800' },
@@ -118,8 +118,8 @@ export default function ProductDetail() {
           {purchases.length === 0 ? (
             <p className="text-gray-400 text-sm">No stock entries yet.</p>
           ) : (
-            <div className="bg-white rounded-lg border border-brand-border overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="bg-white rounded-lg border border-brand-border overflow-x-auto">
+              <table className="w-full text-sm min-w-[480px]">
                 <thead className="bg-brand-green">
                   <tr>
                     <th className="text-left px-4 py-3 text-brand-gold font-medium">Date</th>
@@ -160,8 +160,8 @@ export default function ProductDetail() {
           {sales.length === 0 ? (
             <p className="text-gray-400 text-sm">No sales yet.</p>
           ) : (
-            <div className="bg-white rounded-lg border border-brand-border overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="bg-white rounded-lg border border-brand-border overflow-x-auto">
+              <table className="w-full text-sm min-w-[480px]">
                 <thead className="bg-brand-green">
                   <tr>
                     <th className="text-left px-4 py-3 text-brand-gold font-medium">Date</th>

@@ -85,7 +85,7 @@ export default function Products() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
         <button onClick={() => navigate('/')} className="text-sm text-brand-green hover:underline mb-4 block">
           ← Back to Categories
         </button>
@@ -137,7 +137,7 @@ export default function Products() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {products.map(product => {
               const { stock, profit } = computeSummary(product)
               const reviewCount = product.product_reviews?.[0]?.count ?? 0
@@ -176,7 +176,7 @@ export default function Products() {
                       <span>{reviewCount}</span>
                     </div>
                   )}
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10">
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); setStockingProduct(product) }}

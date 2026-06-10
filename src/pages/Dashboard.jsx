@@ -111,7 +111,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-6 py-8 space-y-10">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8 space-y-10">
         <h1 className="text-xl font-bold text-brand-green">Dashboard</h1>
 
         {/* Sales Transactions — at top */}
@@ -152,42 +152,65 @@ export default function Dashboard() {
           {filteredSales.length === 0 ? (
             <p className="text-gray-400 text-sm py-6 text-center">No sales for this period.</p>
           ) : (
-            <div className="bg-white rounded-lg border border-brand-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-brand-green">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-brand-gold font-medium">Product</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Date</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Qty</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Cost Price</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Selling Price</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Revenue</th>
-                    <th className="text-right px-4 py-3 text-brand-gold font-medium">Payment</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-brand-border">
-                  {filteredSales.map((s, i) => (
-                    <tr key={i} className="hover:bg-brand-cream">
-                      <td className="px-4 py-3 font-medium text-gray-800">{s.productName}</td>
-                      <td className="px-4 py-3 text-right text-gray-500">{s.saleDate}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">{s.quantitySold}</td>
-                      <td className="px-4 py-3 text-right text-gray-600">₹{s.avgCostPrice.toFixed(0)}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">₹{Number(s.sellingPrice).toFixed(0)}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-brand-green">₹{s.revenue.toFixed(0)}</td>
-                      <td className="px-4 py-3 text-right">
-                        <span className={`inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full ${s.paymentReceived ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                          {s.paymentReceived ? 'Received' : 'Pending'}
-                        </span>
-                      </td>
+            <>
+              {/* Desktop table */}
+              <div className="hidden md:block bg-white rounded-lg border border-brand-border overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-brand-green">
+                    <tr>
+                      <th className="text-left px-4 py-3 text-brand-gold font-medium">Product</th>
+                      <th className="text-right px-4 py-3 text-brand-gold font-medium">Date</th>
+                      <th className="text-right px-4 py-3 text-brand-gold font-medium">Qty</th>
+                      <th className="text-right px-4 py-3 text-brand-gold font-medium">Cost Price</th>
+                      <th className="text-right px-4 py-3 text-brand-gold font-medium">Selling Price</th>
+                      <th className="text-right px-4 py-3 text-brand-gold font-medium">Revenue</th>
+                      <th className="text-right px-4 py-3 text-brand-gold font-medium">Payment</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-brand-border">
+                    {filteredSales.map((s, i) => (
+                      <tr key={i} className="hover:bg-brand-cream">
+                        <td className="px-4 py-3 font-medium text-gray-800">{s.productName}</td>
+                        <td className="px-4 py-3 text-right text-gray-500">{s.saleDate}</td>
+                        <td className="px-4 py-3 text-right text-gray-700">{s.quantitySold}</td>
+                        <td className="px-4 py-3 text-right text-gray-600">₹{s.avgCostPrice.toFixed(0)}</td>
+                        <td className="px-4 py-3 text-right text-gray-700">₹{Number(s.sellingPrice).toFixed(0)}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-brand-green">₹{s.revenue.toFixed(0)}</td>
+                        <td className="px-4 py-3 text-right">
+                          <span className={`inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full ${s.paymentReceived ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                            {s.paymentReceived ? 'Received' : 'Pending'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile stacked cards */}
+              <div className="md:hidden space-y-2.5">
+                {filteredSales.map((s, i) => (
+                  <div key={i} className="bg-white rounded-lg border border-brand-border p-3.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-semibold text-gray-800 text-sm">{s.productName}</p>
+                      <span className={`shrink-0 inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${s.paymentReceived ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                        {s.paymentReceived ? 'Received' : 'Pending'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5">{s.saleDate} · Qty {s.quantitySold}</p>
+                    <div className="flex items-center gap-4 mt-2 text-xs">
+                      <span className="text-gray-500">Cost <b className="text-gray-700">₹{s.avgCostPrice.toFixed(0)}</b></span>
+                      <span className="text-gray-500">Sell <b className="text-gray-700">₹{Number(s.sellingPrice).toFixed(0)}</b></span>
+                      <span className="text-brand-green font-semibold ml-auto">₹{s.revenue.toFixed(0)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Total Revenue', value: `₹${totalRevenue.toFixed(2)}`, bg: 'bg-brand-gold/10 border-brand-gold/20', color: 'text-gray-800' },
             { label: 'Total Cost', value: `₹${totalCost.toFixed(2)}`, bg: 'bg-white border-brand-border', color: 'text-gray-800' },
