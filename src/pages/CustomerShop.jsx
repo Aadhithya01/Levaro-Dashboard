@@ -27,8 +27,10 @@ export default function CustomerShop() {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [scrolled, setScrolled] = useState(false)
+  const [showAbout, setShowAbout] = useState(false)
   const navigate = useNavigate()
   const gridRef = useRef(null)
+  const footerRef = useRef(null)
 
   useEffect(() => {
     supabase
@@ -90,6 +92,12 @@ export default function CustomerShop() {
     gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  const handleNav = (label) => {
+    if (label === 'Contact') footerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    else if (label === 'About') setShowAbout(true)
+    else scrollToCollections() // Collections, Lookbook
+  }
+
   return (
     <div className="min-h-screen levaro-shop levaro-canvas">
       <CursorAccent />
@@ -111,7 +119,7 @@ export default function CustomerShop() {
           {['Collections', 'Lookbook', 'About', 'Contact'].map(l => (
             <button
               key={l}
-              onClick={scrollToCollections}
+              onClick={() => handleNav(l)}
               className="text-brand-cream/60 hover:text-brand-gold transition-colors uppercase"
               style={{ fontSize: '0.62rem', letterSpacing: '0.28em' }}
             >
@@ -265,9 +273,42 @@ export default function CustomerShop() {
         )}
       </main>
 
-      <CustomerFooter />
+      <div ref={footerRef}>
+        <CustomerFooter />
+      </div>
       <FloatingFeedbackButton />
       <FloatingSuggestionButton />
+
+      {showAbout && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-5 levaro-shop"
+          style={{ background: 'rgba(8,30,22,0.7)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowAbout(false)}
+        >
+          <div
+            className="levaro-card-enter bg-brand-cream rounded-2xl w-full max-w-sm px-8 py-9 text-center"
+            style={{ boxShadow: '0 24px 70px rgba(0,0,0,0.4)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ fontSize: '2.6rem', lineHeight: 1 }}>🧵✂️</div>
+            <h3 className="levaro-display text-brand-green mt-3" style={{ fontSize: '1.7rem', fontWeight: 500, letterSpacing: '0.02em' }}>
+              Under Construction
+            </h3>
+            <p className="text-gray-600 mt-3" style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
+              Our finest tailors are still stitching this page together —
+              needle, thread, and a little drama. Our story will be worth the
+              wait. Do come back soon. ✦
+            </p>
+            <button
+              onClick={() => setShowAbout(false)}
+              className="mt-6 bg-brand-green text-brand-gold rounded-full px-6 py-2.5 hover:opacity-90 transition-opacity uppercase"
+              style={{ fontSize: '0.65rem', letterSpacing: '0.22em', fontWeight: 600 }}
+            >
+              Back to the Collection
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
