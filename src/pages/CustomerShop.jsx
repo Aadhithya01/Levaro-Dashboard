@@ -116,7 +116,7 @@ export default function CustomerShop() {
           LEVARO
         </span>
         <nav className="hidden md:flex gap-7">
-          {['Collections', 'Lookbook', 'About', 'Contact'].map(l => (
+          {['Collections', 'About', 'Contact'].map(l => (
             <button
               key={l}
               onClick={() => handleNav(l)}
