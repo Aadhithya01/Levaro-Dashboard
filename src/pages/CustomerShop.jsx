@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import CustomerFooter from '../components/customer/CustomerFooter'
@@ -7,6 +7,21 @@ import FloatingSuggestionButton from '../components/customer/FloatingSuggestionB
 import Marquee from '../components/customer/Marquee'
 import CursorAccent from '../components/customer/CursorAccent'
 import { tileSpan, tileIndexLabel } from '../lib/collectionGrid'
+
+// All usable image URLs for a category: product main images + product gallery
+// images (images only, not video). Used so tiles/hero pull from real products.
+function categoryImagePool(cat) {
+  const urls = []
+  ;(cat.products ?? []).forEach(p => {
+    if (p.image_url) urls.push(p.image_url)
+    ;(p.product_images ?? []).forEach(img => {
+      if (img.media_url && (img.media_type === 'image' || !img.media_type)) urls.push(img.media_url)
+    })
+  })
+  return urls
+}
+
+const pickRandom = arr => (arr.length ? arr[Math.floor(Math.random() * arr.length)] : null)
 
 export default function CustomerShop() {
   const [categories, setCategories] = useState([])
@@ -18,7 +33,7 @@ export default function CustomerShop() {
   useEffect(() => {
     supabase
       .from('categories')
-      .select('id, name, image_url, is_hero, products(id)')
+      .select('id, name, image_url, is_hero, products(id, image_url, product_images(media_url, media_type))')
       .order('created_at', { ascending: true })
       .then(({ data }) => { setCategories(data ?? []); setLoading(false) })
   }, [])
@@ -45,11 +60,31 @@ export default function CustomerShop() {
     return () => io.disconnect()
   }, [loading, categories])
 
-  // Hero image: marked hero → newest collection with an image → none
-  const heroCat =
-    categories.find(c => c.is_hero && c.image_url) ||
-    [...categories].reverse().find(c => c.image_url) ||
+  // Pick one random image per category (from its products), once per load so
+  // it stays stable while scrolling but changes on each visit. Falls back to
+  // the category's own image_url when it has no product images.
+  const imageByCat = useMemo(() => {
+    const map = {}
+    categories.forEach(c => {
+      map[c.id] = pickRandom(categoryImagePool(c)) || c.image_url || null
+    })
+    return map
+  }, [categories])
+
+  // Hero collection: admin-marked hero → newest collection that has an image →
+  // first collection. Hero photo is a random product image from it, falling
+  // back to any available image so the hero is never empty.
+  const heroCat = useMemo(() =>
+    categories.find(c => c.is_hero) ||
+    [...categories].reverse().find(c => imageByCat[c.id]) ||
+    categories[0] ||
     null
+  , [categories, imageByCat])
+
+  const heroImage = useMemo(() => {
+    if (heroCat && imageByCat[heroCat.id]) return imageByCat[heroCat.id]
+    return categories.map(c => imageByCat[c.id]).find(Boolean) || null
+  }, [heroCat, imageByCat, categories])
 
   const scrollToCollections = () => {
     gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -105,7 +140,7 @@ export default function CustomerShop() {
           </p>
           <h1
             className="levaro-display text-brand-cream"
-            style={{ fontWeight: 300, lineHeight: 0.92, letterSpacing: '0.02em', fontSize: 'clamp(4rem, 13vw, 11rem)' }}
+            style={{ fontWeight: 300, lineHeight: 0.92, letterSpacing: '0.02em', fontSize: 'clamp(3.5rem, 12vw, 11rem)', whiteSpace: 'nowrap' }}
           >
             {'LEVARO'.split('').map((ch, i) => (
               <span key={i} className="levaro-letter" style={{ animationDelay: `${0.3 + i * 0.07}s` }}>{ch}</span>
@@ -136,8 +171,8 @@ export default function CustomerShop() {
         {/* Hero art */}
         <div className="order-1 md:order-2 relative h-[42vh] md:h-[78vh] rounded-sm overflow-hidden levaro-reveal"
           style={{ background: 'linear-gradient(160deg, #3a6a55, #16402f)', boxShadow: '0 30px 80px rgba(0,0,0,0.45)' }}>
-          {heroCat?.image_url && (
-            <img src={heroCat.image_url} alt={heroCat.name} className="w-full h-full object-cover levaro-zoom" style={{ opacity: 0.92 }} />
+          {heroImage && (
+            <img src={heroImage} alt={heroCat?.name ?? 'LEVARO'} className="w-full h-full object-cover levaro-zoom" style={{ opacity: 0.92 }} />
           )}
           <div className="absolute inset-3.5 pointer-events-none z-[3]" style={{ border: '1px solid rgba(232,201,106,0.35)' }} />
           <span className="absolute right-5 top-4 z-[4] levaro-display text-brand-gold" style={{ fontSize: '0.8rem', letterSpacing: '0.3em' }}>N° 01</span>
@@ -185,9 +220,9 @@ export default function CustomerShop() {
                 className={`group relative overflow-hidden rounded-sm cursor-pointer opacity-0 ${tileSpan(i)}`}
                 style={{ background: 'linear-gradient(160deg, #2f5f4c, #173f2f)' }}
               >
-                {cat.image_url ? (
+                {imageByCat[cat.id] ? (
                   <img
-                    src={cat.image_url}
+                    src={imageByCat[cat.id]}
                     alt={cat.name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.07]"
                     style={{ opacity: 0.9 }}
