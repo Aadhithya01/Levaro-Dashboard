@@ -169,10 +169,10 @@ export default function CustomerCategory() {
                       </p>
                     )}
                     <div className="mt-1 flex items-center justify-between gap-2">
-                      <p className="font-semibold" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.95rem', color: '#1a5c45' }}>
+                      <p className="font-semibold truncate min-w-0" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.95rem', color: '#1a5c45' }}>
                         {product.selling_price != null
                           ? `₹${Number(product.selling_price).toFixed(0)}`
-                          : <span style={{ color: '#9ca3af', fontWeight: 400, fontSize: '0.8rem' }}>Price on request</span>}
+                          : <span style={{ color: '#9ca3af', fontWeight: 400, fontSize: '0.8rem' }}>On request</span>}
                       </p>
                       <button
                         type="button"
