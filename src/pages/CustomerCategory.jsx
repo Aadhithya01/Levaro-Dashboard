@@ -188,7 +188,7 @@ export default function CustomerCategory() {
                           <span style={{ color: '#9ca3af', fontSize: '0.62rem' }}>({reviewCount})</span>
                         </span>
                       ) : (
-                        <span style={{ fontSize: '0.65rem', color: '#9ca3af' }}>No reviews</span>
+                        <span />
                       )}
                       <button
                         type="button"
