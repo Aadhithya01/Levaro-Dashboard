@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 
 const CartContext = createContext(null)
 
@@ -18,6 +18,14 @@ function readStored() {
 export function CartProvider({ children }) {
   const [items, setItems] = useState(readStored)
   const [isOpen, setIsOpen] = useState(false)
+  const [toast, setToast] = useState(null)
+  const toastTimer = useRef(null)
+
+  const showToast = (message) => {
+    setToast(message)
+    clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => setToast(null), 1400)
+  }
 
   useEffect(() => {
     try {
@@ -43,6 +51,7 @@ export function CartProvider({ children }) {
         qty: 1,
       }]
     })
+    showToast('Added to cart')
   }
 
   const removeItem = (id) => setItems(prev => prev.filter(i => i.id !== id))
@@ -70,6 +79,7 @@ export function CartProvider({ children }) {
       items, count, total, has,
       addItem, removeItem, setQty, clear,
       isOpen, openCart, closeCart,
+      toast,
     }}>
       {children}
     </CartContext.Provider>

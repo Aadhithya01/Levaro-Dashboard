@@ -3,10 +3,9 @@ import { useState } from 'react'
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER
 
 function buildMessage({ name, phone, address, landmark, locationUrl, items, total }) {
-  const orderLines = items.flatMap((i, idx) => {
+  const orderLines = items.map((i, idx) => {
     const codePart = i.code ? ` (${i.code})` : ''
-    const line = `${idx + 1}. ${i.name}${codePart} — Qty: ${i.qty} — ₹${(i.price * i.qty).toFixed(0)}`
-    return i.image ? [line, `   Image: ${i.image}`] : [line]
+    return `${idx + 1}. ${i.name}${codePart} — Qty: ${i.qty} — ₹${(i.price * i.qty).toFixed(0)}`
   })
 
   const details = [

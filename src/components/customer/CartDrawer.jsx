@@ -3,11 +3,24 @@ import { useCart } from '../../contexts/CartContext'
 import CheckoutModal from './CheckoutModal'
 
 export default function CartDrawer() {
-  const { items, total, isOpen, closeCart, setQty, removeItem, clear } = useCart()
+  const { items, total, isOpen, closeCart, setQty, removeItem, clear, toast } = useCart()
   const [checkingOut, setCheckingOut] = useState(false)
 
   return (
     <>
+      {/* Transient "added to cart" toast */}
+      {toast && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[70] levaro-shop pointer-events-none">
+          <div
+            className="levaro-card-enter flex items-center gap-2 bg-brand-green text-brand-gold rounded-full px-4 py-2 shadow-lg"
+            style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.78rem', letterSpacing: '0.04em', fontWeight: 600 }}
+          >
+            <span>✓</span>
+            <span>{toast}</span>
+          </div>
+        </div>
+      )}
+
       {/* Backdrop */}
       <div
         onClick={closeCart}
