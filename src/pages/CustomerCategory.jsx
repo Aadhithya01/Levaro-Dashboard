@@ -36,7 +36,7 @@ export default function CustomerCategory() {
           supabase.from('categories').select('name').eq('id', categoryId).single(),
           supabase
             .from('products')
-            .select('id, name, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order)')
+            .select('id, name, code, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order)')
             .eq('category_id', categoryId)
             .order('created_at', { ascending: false }),
         ])
@@ -155,6 +155,11 @@ export default function CustomerCategory() {
                     <h4 className="levaro-display text-gray-800 truncate leading-snug" style={{ fontSize: '1.2rem', fontWeight: 500, letterSpacing: '0.01em' }}>
                       {product.name}
                     </h4>
+                    {product.code && (
+                      <p className="truncate" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 500 }}>
+                        {product.code}
+                      </p>
+                    )}
                     <p className="mt-0.5 font-semibold" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.95rem', color: '#1a5c45' }}>
                       {product.selling_price != null
                         ? `₹${Number(product.selling_price).toFixed(0)}`

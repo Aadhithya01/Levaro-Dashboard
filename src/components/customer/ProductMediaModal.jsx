@@ -77,6 +77,15 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
               {product.name}
             </p>
 
+            {product.code && (
+              <p
+                className="mt-1"
+                style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 500 }}
+              >
+                {product.code}
+              </p>
+            )}
+
             <p
               className="mt-1.5 font-semibold"
               style={{ fontFamily: "'Raleway', sans-serif", fontSize: '1.15rem', color: '#1a5c45' }}
