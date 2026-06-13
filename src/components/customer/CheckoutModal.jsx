@@ -3,30 +3,33 @@ import { useState } from 'react'
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER
 
 function buildMessage({ name, phone, address, landmark, locationUrl, items, total }) {
-  const lines = items.map(i => {
+  const orderLines = items.flatMap((i, idx) => {
     const codePart = i.code ? ` (${i.code})` : ''
-    return `🛍️ ${i.name}${codePart} ×${i.qty} — ₹${(i.price * i.qty).toFixed(0)}`
+    const line = `${idx + 1}. ${i.name}${codePart} — Qty: ${i.qty} — ₹${(i.price * i.qty).toFixed(0)}`
+    return i.image ? [line, `   Image: ${i.image}`] : [line]
   })
+
   const details = [
-    `📞 Reach me at: ${phone}`,
-    `📦 Send the goodies to: ${address}`,
+    `Name: ${name}`,
+    `Phone: ${phone}`,
+    `Delivery address: ${address}`,
   ]
-  if (landmark) details.push(`🏠 Landmark: ${landmark}`)
-  if (locationUrl) details.push(`📍 My location pin: ${locationUrl}`)
+  if (landmark) details.push(`Landmark: ${landmark}`)
+  if (locationUrl) details.push(`Location: ${locationUrl}`)
 
   return [
-    `🎉 Woohoo! A shiny new order has landed! 🎉`,
+    `Hello LEVARO team,`,
     ``,
-    `Hi LEVARO fam 👋 It's ${name} here, and my cart and I have made some *excellent* life choices today 😎`,
+    `I would like to place the following order:`,
     ``,
     ...details,
     ``,
-    `Here's the loot 👇`,
-    ...lines,
+    `Order summary:`,
+    ...orderLines,
     ``,
-    `💰 Grand total: ₹${total.toFixed(0)} (totally worth it 🤑)`,
+    `Total: ₹${total.toFixed(0)}`,
     ``,
-    `Can't wait to flaunt these! Please confirm and let's make it happen 🙌✨`,
+    `Please confirm availability and the delivery timeline. Thank you.`,
   ].join('\n')
 }
 
@@ -177,7 +180,7 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                   ? 'Getting your location…'
                   : locationUrl
                     ? '📍 Location pinned ✓ (tap to update)'
-                    : '📍 Share my location'}
+                    : '📍 Share my location (optional)'}
               </button>
               {geoError && (
                 <p className="text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
