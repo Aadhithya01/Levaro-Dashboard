@@ -5,16 +5,22 @@ const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER
 function buildMessage({ name, phone, address, items, total }) {
   const lines = items.map(i => {
     const codePart = i.code ? ` (${i.code})` : ''
-    return `• ${i.name}${codePart} ×${i.qty} — ₹${(i.price * i.qty).toFixed(0)}`
+    return `🛍️ ${i.name}${codePart} ×${i.qty} — ₹${(i.price * i.qty).toFixed(0)}`
   })
   return [
-    `New order from ${name}`,
-    `Phone: ${phone}`,
-    `Address: ${address}`,
-    '',
+    `🎉 Woohoo! A shiny new order has landed! 🎉`,
+    ``,
+    `Hi LEVARO fam 👋 It's ${name} here, and my cart and I have made some *excellent* life choices today 😎`,
+    ``,
+    `📞 Reach me at: ${phone}`,
+    `📦 Send the goodies to: ${address}`,
+    ``,
+    `Here's the loot 👇`,
     ...lines,
-    '',
-    `Total: ₹${total.toFixed(0)}`,
+    ``,
+    `💰 Grand total: ₹${total.toFixed(0)} (totally worth it 🤑)`,
+    ``,
+    `Can't wait to flaunt these! Please confirm and let's make it happen 🙌✨`,
   ].join('\n')
 }
 
@@ -35,7 +41,7 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
     setSent(true)
   }
 
-  const inputStyle = { fontFamily: "'Raleway', sans-serif", fontSize: '0.9rem' }
+  const inputStyle = { fontFamily: "'Raleway', sans-serif", fontSize: '0.9rem', color: '#1a5c45', fontWeight: 500 }
 
   return (
     <div
@@ -44,8 +50,8 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
       onClick={onClose}
     >
       <div
-        className="levaro-card-enter w-full max-w-sm bg-white overflow-hidden shadow-2xl"
-        style={{ borderRadius: '20px', animationDelay: '0s' }}
+        className="levaro-card-enter w-full max-w-sm bg-white overflow-y-auto shadow-2xl"
+        style={{ borderRadius: '20px', animationDelay: '0s', maxHeight: '90vh' }}
         onClick={e => e.stopPropagation()}
       >
         <div className="px-5 pt-5 pb-6">

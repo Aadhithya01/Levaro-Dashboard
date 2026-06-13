@@ -43,7 +43,6 @@ export function CartProvider({ children }) {
         qty: 1,
       }]
     })
-    setIsOpen(true)
   }
 
   const removeItem = (id) => setItems(prev => prev.filter(i => i.id !== id))
