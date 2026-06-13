@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import MediaSlider from '../MediaSlider'
 import ImageZoomModal from '../ImageZoomModal'
+import { useCart } from '../../contexts/CartContext'
 
 const ZoomIcon = () => (
   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -11,6 +12,14 @@ const ZoomIcon = () => (
 
 export default function ProductMediaModal({ product, allMedia = [], soldOut, onClose, onReview }) {
   const [zoomOpen, setZoomOpen] = useState(false)
+  const { addItem } = useCart()
+  const canAdd = !soldOut && product.selling_price != null
+  const cartImage = allMedia[0]?.url ?? product.image_url ?? null
+
+  const handleAdd = () => {
+    addItem({ id: product.id, name: product.name, code: product.code, price: product.selling_price, image: cartImage })
+    onClose()
+  }
 
   return (
     <>
@@ -107,8 +116,18 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
 
             <button
               type="button"
+              onClick={handleAdd}
+              disabled={!canAdd}
+              className="mt-4 w-full bg-brand-green text-brand-gold rounded-xl py-3 hover:opacity-90 transition-opacity font-semibold disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+              style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.78rem', letterSpacing: '0.12em' }}
+            >
+              {soldOut ? 'SOLD OUT' : product.selling_price == null ? 'PRICE ON REQUEST' : 'ADD TO CART'}
+            </button>
+
+            <button
+              type="button"
               onClick={() => onReview(product)}
-              className="mt-4 w-full border border-brand-green/40 text-brand-green rounded-xl py-2.5 hover:bg-brand-green hover:text-brand-gold transition-all duration-250 font-semibold"
+              className="mt-2 w-full border border-brand-green/40 text-brand-green rounded-xl py-2.5 hover:bg-brand-green hover:text-brand-gold transition-all duration-250 font-semibold"
               style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem', letterSpacing: '0.12em' }}
             >
               ★ WRITE A REVIEW

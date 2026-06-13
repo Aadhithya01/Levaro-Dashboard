@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useCart } from '../contexts/CartContext'
+import CartButton from '../components/customer/CartButton'
+import CartDrawer from '../components/customer/CartDrawer'
 import CustomerFooter from '../components/customer/CustomerFooter'
 import FloatingFeedbackButton from '../components/customer/FloatingFeedbackButton'
 import FloatingSuggestionButton from '../components/customer/FloatingSuggestionButton'
@@ -28,6 +31,7 @@ export default function CustomerCategory() {
   const [loading, setLoading] = useState(true)
   const [reviewingProduct, setReviewingProduct] = useState(null)
   const [viewingProduct, setViewingProduct] = useState(null)
+  const { addItem } = useCart()
 
   useEffect(() => {
     async function load() {
@@ -69,7 +73,9 @@ export default function CustomerCategory() {
         <span className="levaro-display text-brand-gold" style={{ fontSize: '1.05rem', fontWeight: 300, letterSpacing: '0.4em' }}>
           LEVARO
         </span>
-        <div className="w-24" />
+        <div className="w-24 flex justify-end">
+          <CartButton />
+        </div>
       </header>
 
       <Marquee />
@@ -114,6 +120,8 @@ export default function CustomerCategory() {
                 ? (reviewRatings.reduce((s, r) => s + r.rating, 0) / reviewCount).toFixed(1)
                 : null
               const allMedia = buildMedia(product)
+              const canAdd = !soldOut && product.selling_price != null
+              const cartImage = allMedia[0]?.url ?? product.image_url ?? null
 
               return (
                 <div
@@ -191,6 +199,19 @@ export default function CustomerCategory() {
                         ★ Review
                       </button>
                     </div>
+
+                    <button
+                      type="button"
+                      disabled={!canAdd}
+                      onClick={e => {
+                        e.stopPropagation()
+                        addItem({ id: product.id, name: product.name, code: product.code, price: product.selling_price, image: cartImage })
+                      }}
+                      className="mt-2.5 w-full rounded-md py-2 bg-brand-green text-brand-gold hover:opacity-90 transition-opacity font-semibold disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+                      style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.66rem', letterSpacing: '0.1em' }}
+                    >
+                      {soldOut ? 'SOLD OUT' : product.selling_price == null ? 'PRICE ON REQUEST' : 'ADD TO CART'}
+                    </button>
                   </div>
                 </div>
               )
@@ -200,6 +221,7 @@ export default function CustomerCategory() {
       </main>
 
       <CustomerFooter />
+      <CartDrawer />
       <FloatingFeedbackButton />
       <FloatingSuggestionButton />
 
