@@ -45,19 +45,21 @@ VITE_EMAILJS_TEMPLATE_REVIEW_ID=...
 - `categories` — `id, name, code, image_url, is_hero` (one hero category drives the Welcome/landing visual)
 - `products` — `id, name, image_url, selling_price, category_id`
 - `product_images` — `id, product_id, media_url, media_type, sort_order` (multi-image/video gallery per product)
+- `product_variants` — `id, product_id, color_name, image_url, image_path, created_at` (per-colour options; photos in the `product-images` bucket)
 - `product_reviews` — `id, product_id, ... , created_at` (written by the public `ReviewModal`)
-- `purchases` — `id, product_id, quantity, price_per_piece, date_of_purchase`
-- `sales` — `id, product_id, quantity_sold, selling_price, sale_date`
+- `purchases` — `id, product_id, quantity, price_per_piece, date_of_purchase, variant_id` (nullable `variant_id` → `product_variants`; per-colour stock = Σ purchases − Σ sales for that variant)
+- `sales` — `id, product_id, quantity_sold, selling_price, sale_date, payment_received, variant_id` (nullable `variant_id`)
 - `tasks` — `id, title, due_date, assigned_to (member_id), status ('pending'|'done'), created_at`
+- `vendor_orders` — `id, vendor_name, phone, order_price, quantity, location, bill_url, bill_path, created_by, created_at` (standalone vendor order log; bills in the public `order-bills` bucket)
 - `app_settings` — `key, value` (e.g. `image_enhancement_prompt` consumed by the edge function)
 - `ledger_members` — `id, name, email`
 - `ledger_expenses` — `id, description, amount, paid_by (member_id), created_by (user_id), created_at`
 - `ledger_splits` — `id, expense_id, member_id, amount`
 - `ledger_settlements` — `id, from_member, to_member, amount, note, created_at, created_by`
 
-RLS is "all authenticated users can do everything" (shared workspace, no per-user ownership) except the `avatars` storage bucket which is per-user. Storage buckets: `category-images`, `product-images`, `avatars` (all public-read).
+RLS is "all authenticated users can do everything" (shared workspace, no per-user ownership) except the `avatars` storage bucket which is per-user. Storage buckets: `category-images`, `product-images`, `avatars`, `order-bills` (all public-read).
 
-> **Schema source of truth**: `supabase/schema.sql` is an append-only migration log but is **stale** — later tables/columns (`product_images`, `product_reviews`, `tasks`, `app_settings`, `selling_price`, `is_hero`) were applied via Supabase MCP migrations and are not in it. Trust the live DB / component queries over `schema.sql`.
+> **Schema source of truth**: `supabase/schema.sql` is an append-only migration log. The `vendor_orders` and `product_variants` migrations (2026-06-29) are mirrored there, but some earlier columns (`product_reviews`, `app_settings`, `selling_price`, `is_hero`, `sales.payment_received`) were applied via Supabase MCP and are NOT all reflected. Trust the live DB / component queries over `schema.sql`.
 
 **Edge function** (`supabase/functions/process-image/index.ts`): AI product-photo enhancement. Accepts a multipart upload, runs it through HuggingFace `instruct-pix2pix` (prompt read from `app_settings.image_enhancement_prompt`), uploads the result to the `product-images` bucket, and returns `{ url, path }`. Falls back to the original image on any HF failure. Requires `HUGGINGFACE_TOKEN` and `SUPABASE_SERVICE_ROLE_KEY` in the function env. `MediaUploadSection` / `MediaSlider` on the product modals consume this.
 
