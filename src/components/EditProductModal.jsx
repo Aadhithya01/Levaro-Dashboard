@@ -109,13 +109,13 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
     }))
   }
   function removeExistingVariant(id) {
-    setVariants(prev => {
-      const row = prev.find(v => v.id === id)
-      if (row?.newPreviewUrl) URL.revokeObjectURL(row.newPreviewUrl)
-      // Capture image_path now so submit can delete the storage object without re-fetching.
-      setRemovedVariantIds(rids => [...rids, { id, image_path: row?.image_path ?? null }])
-      return prev.filter(v => v.id !== id)
-    })
+    // Read from the closure (this only runs from a click handler, so state is fresh)
+    // to keep the state updaters pure. Capture image_path so submit can delete the
+    // storage object without re-fetching.
+    const row = variants.find(v => v.id === id)
+    if (row?.newPreviewUrl) URL.revokeObjectURL(row.newPreviewUrl)
+    setRemovedVariantIds(prev => [...prev, { id, image_path: row?.image_path ?? null }])
+    setVariants(prev => prev.filter(v => v.id !== id))
   }
   function addNewColorRow() {
     setNewColors(prev => [...prev, { id: crypto.randomUUID(), name: '', file: null, previewUrl: null }])
