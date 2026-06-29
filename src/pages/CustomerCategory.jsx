@@ -243,6 +243,7 @@ export default function CustomerCategory() {
       )}
       {viewingProduct && (
         <ProductMediaModal
+          key={viewingProduct.product.id}
           product={viewingProduct.product}
           allMedia={viewingProduct.allMedia}
           soldOut={viewingProduct.soldOut}
