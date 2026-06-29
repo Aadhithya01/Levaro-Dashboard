@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useCart } from '../../contexts/CartContext'
+import { useCart, cartLineKey } from '../../contexts/CartContext'
 import CheckoutModal from './CheckoutModal'
 
 export default function CartDrawer() {
@@ -56,8 +56,10 @@ export default function CartDrawer() {
             </p>
           ) : (
             <ul className="space-y-4">
-              {items.map(item => (
-                <li key={item.id} className="flex gap-3">
+              {items.map(item => {
+                const key = cartLineKey(item)
+                return (
+                <li key={key} className="flex gap-3">
                   <div className="w-16 h-20 flex-shrink-0 rounded-md overflow-hidden bg-brand-green/10">
                     {item.image
                       ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
@@ -66,6 +68,9 @@ export default function CartDrawer() {
 
                   <div className="flex-1 min-w-0">
                     <p className="levaro-display text-gray-800 truncate" style={{ fontSize: '1rem', fontWeight: 500 }}>{item.name}</p>
+                    {item.color && (
+                      <p className="truncate" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.66rem', color: '#1a5c45', fontWeight: 600 }}>{item.color}</p>
+                    )}
                     {item.code && (
                       <p className="truncate" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.66rem', color: '#9ca3af' }}>{item.code}</p>
                     )}
@@ -77,21 +82,21 @@ export default function CartDrawer() {
                       <div className="flex items-center border border-brand-green/25 rounded-md overflow-hidden">
                         <button
                           type="button"
-                          onClick={() => setQty(item.id, item.qty - 1)}
+                          onClick={() => setQty(key, item.qty - 1)}
                           aria-label="Decrease quantity"
                           className="px-2 py-0.5 text-brand-green hover:bg-brand-green/10 transition-colors"
                         >−</button>
                         <span className="px-2.5 text-gray-700" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem', fontWeight: 600 }}>{item.qty}</span>
                         <button
                           type="button"
-                          onClick={() => setQty(item.id, item.qty + 1)}
+                          onClick={() => setQty(key, item.qty + 1)}
                           aria-label="Increase quantity"
                           className="px-2 py-0.5 text-brand-green hover:bg-brand-green/10 transition-colors"
                         >+</button>
                       </div>
                       <button
                         type="button"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem(key)}
                         className="text-gray-400 hover:text-red-500 transition-colors"
                         style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem', letterSpacing: '0.05em' }}
                       >
@@ -100,7 +105,8 @@ export default function CartDrawer() {
                     </div>
                   </div>
                 </li>
-              ))}
+                )
+              })}
             </ul>
           )}
         </div>

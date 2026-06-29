@@ -4,6 +4,10 @@ const CartContext = createContext(null)
 
 const STORAGE_KEY = 'levaro_cart'
 
+export function cartLineKey(item) {
+  return `${item.id}::${item.color ?? ''}`
+}
+
 function readStored() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -35,12 +39,13 @@ export function CartProvider({ children }) {
     }
   }, [items])
 
-  // product: { id, name, code, price, image }
+  // product: { id, name, code, price, image, color?, variantId? }
   const addItem = (product) => {
+    const key = `${product.id}::${product.color ?? ''}`
     setItems(prev => {
-      const existing = prev.find(i => i.id === product.id)
+      const existing = prev.find(i => cartLineKey(i) === key)
       if (existing) {
-        return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i)
+        return prev.map(i => cartLineKey(i) === key ? { ...i, qty: i.qty + 1 } : i)
       }
       return [...prev, {
         id: product.id,
@@ -48,20 +53,22 @@ export function CartProvider({ children }) {
         code: product.code ?? null,
         price: Number(product.price),
         image: product.image ?? null,
+        color: product.color ?? null,
+        variantId: product.variantId ?? null,
         qty: 1,
       }]
     })
     showToast('Added to cart')
   }
 
-  const removeItem = (id) => setItems(prev => prev.filter(i => i.id !== id))
+  const removeItem = (key) => setItems(prev => prev.filter(i => cartLineKey(i) !== key))
 
-  const setQty = (id, qty) => {
+  const setQty = (key, qty) => {
     const n = Math.max(0, Math.floor(qty))
     setItems(prev =>
       n === 0
-        ? prev.filter(i => i.id !== id)
-        : prev.map(i => i.id === id ? { ...i, qty: n } : i)
+        ? prev.filter(i => cartLineKey(i) !== key)
+        : prev.map(i => cartLineKey(i) === key ? { ...i, qty: n } : i)
     )
   }
 

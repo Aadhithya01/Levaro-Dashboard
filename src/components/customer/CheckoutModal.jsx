@@ -5,7 +5,8 @@ const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER
 function buildMessage({ name, phone, address, landmark, locationUrl, items, total }) {
   const orderLines = items.map((i, idx) => {
     const codePart = i.code ? ` (${i.code})` : ''
-    return `${idx + 1}. ${i.name}${codePart} — Qty: ${i.qty} — ₹${(i.price * i.qty).toFixed(0)}`
+    const colorPart = i.color ? ` — ${i.color}` : ''
+    return `${idx + 1}. ${i.name}${codePart}${colorPart} — Qty: ${i.qty} — ₹${(i.price * i.qty).toFixed(0)}`
   })
 
   const details = [
