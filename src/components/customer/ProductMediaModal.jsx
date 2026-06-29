@@ -10,14 +10,28 @@ const ZoomIcon = () => (
   </svg>
 )
 
-export default function ProductMediaModal({ product, allMedia = [], soldOut, onClose, onReview }) {
+export default function ProductMediaModal({ product, allMedia = [], soldOut, variants = [], onClose, onReview }) {
   const [zoomOpen, setZoomOpen] = useState(false)
+  const [selectedVariant, setSelectedVariant] = useState(null)
   const { addItem } = useCart()
-  const canAdd = !soldOut && product.selling_price != null
-  const cartImage = allMedia[0]?.url ?? product.image_url ?? null
+  const hasVariants = variants.length > 0
+  const displayMedia = selectedVariant?.image_url
+    ? [{ url: selectedVariant.image_url, type: 'image' }]
+    : allMedia
+  const canAdd = product.selling_price != null && (
+    hasVariants ? (selectedVariant && selectedVariant.stock > 0) : !soldOut
+  )
+  const cartImage = selectedVariant?.image_url ?? allMedia[0]?.url ?? product.image_url ?? null
 
   const handleAdd = () => {
-    addItem({ id: product.id, name: product.name, code: product.code, price: product.selling_price, image: cartImage })
+    addItem({
+      id: product.id,
+      name: product.name,
+      code: product.code,
+      price: product.selling_price,
+      image: cartImage,
+      ...(selectedVariant && { color: selectedVariant.color_name, variantId: selectedVariant.id }),
+    })
     onClose()
   }
 
@@ -36,11 +50,11 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
           {/* Image — double-click anywhere on it to zoom */}
           <div
             className="relative aspect-square bg-black"
-            onDoubleClick={() => allMedia.length > 0 && setZoomOpen(true)}
-            style={{ cursor: allMedia.length > 0 ? 'zoom-in' : 'default' }}
+            onDoubleClick={() => displayMedia.length > 0 && setZoomOpen(true)}
+            style={{ cursor: displayMedia.length > 0 ? 'zoom-in' : 'default' }}
           >
-            {allMedia.length > 0 ? (
-              <MediaSlider items={allMedia} alwaysShowArrows objectFit="contain" />
+            {displayMedia.length > 0 ? (
+              <MediaSlider items={displayMedia} alwaysShowArrows objectFit="contain" />
             ) : (
               <div className="w-full h-full bg-brand-green/10 flex items-center justify-center">
                 <span
@@ -62,7 +76,7 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
             >✕</button>
 
             {/* Zoom */}
-            {allMedia.length > 0 && (
+            {displayMedia.length > 0 && (
               <button
                 type="button"
                 onClick={() => setZoomOpen(true)}
@@ -105,6 +119,34 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
               }
             </p>
 
+            {hasVariants && (
+              <div className="mt-3">
+                <p className="uppercase text-gray-500 mb-1.5" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.6rem', letterSpacing: '0.18em' }}>
+                  Colour {selectedVariant ? `· ${selectedVariant.color_name}` : ''}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {variants.map(v => {
+                    const out = v.stock <= 0
+                    const active = selectedVariant?.id === v.id
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        disabled={out}
+                        onClick={() => setSelectedVariant(v)}
+                        title={out ? `${v.color_name} — sold out` : v.color_name}
+                        className={`relative w-12 h-12 rounded-md overflow-hidden border-2 transition-all ${active ? 'border-brand-green' : 'border-transparent'} ${out ? 'opacity-40 cursor-not-allowed' : 'hover:border-brand-green/50'}`}
+                      >
+                        {v.image_url
+                          ? <img src={v.image_url} alt={v.color_name} className="w-full h-full object-cover" />
+                          : <span className="w-full h-full flex items-center justify-center text-[9px] text-gray-500">{v.color_name}</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {soldOut && (
               <p
                 className="mt-1 uppercase text-red-500"
@@ -121,7 +163,10 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
               className="mt-4 w-full bg-brand-green text-brand-gold rounded-xl py-3 hover:opacity-90 transition-opacity font-semibold disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
               style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.78rem', letterSpacing: '0.12em' }}
             >
-              {soldOut ? 'SOLD OUT' : product.selling_price == null ? 'PRICE ON REQUEST' : 'ADD TO CART'}
+              {soldOut ? 'SOLD OUT'
+                : product.selling_price == null ? 'PRICE ON REQUEST'
+                : hasVariants && !selectedVariant ? 'SELECT A COLOUR'
+                : 'ADD TO CART'}
             </button>
 
             <button
@@ -137,7 +182,7 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
       </div>
 
       {zoomOpen && (
-        <ImageZoomModal items={allMedia} onClose={() => setZoomOpen(false)} />
+        <ImageZoomModal items={displayMedia} onClose={() => setZoomOpen(false)} />
       )}
     </>
   )

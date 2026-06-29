@@ -40,7 +40,7 @@ export default function CustomerCategory() {
           supabase.from('categories').select('name').eq('id', categoryId).single(),
           supabase
             .from('products')
-            .select('id, name, code, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order)')
+            .select('id, name, code, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order), product_variants(id, color_name, image_url, purchases(quantity), sales(quantity_sold))')
             .eq('category_id', categoryId)
             .order('created_at', { ascending: false }),
         ])
@@ -120,6 +120,13 @@ export default function CustomerCategory() {
                 ? (reviewRatings.reduce((s, r) => s + r.rating, 0) / reviewCount).toFixed(1)
                 : null
               const allMedia = buildMedia(product)
+              const variants = (product.product_variants ?? []).map(v => ({
+                id: v.id,
+                color_name: v.color_name,
+                image_url: v.image_url,
+                stock: (v.purchases ?? []).reduce((s, p) => s + p.quantity, 0) - (v.sales ?? []).reduce((s, x) => s + x.quantity_sold, 0),
+              }))
+              const hasVariants = variants.length > 0
               const canAdd = !soldOut && product.selling_price != null
               const cartImage = allMedia[0]?.url ?? product.image_url ?? null
 
@@ -127,7 +134,7 @@ export default function CustomerCategory() {
                 <div
                   key={product.id}
                   data-hover
-                  onClick={() => setViewingProduct({ product, allMedia, soldOut })}
+                  onClick={() => setViewingProduct({ product, allMedia, soldOut, variants })}
                   className="levaro-card-enter group bg-brand-cream rounded-sm overflow-hidden cursor-pointer transition-transform duration-500 hover:-translate-y-1.5"
                   style={{ animationDelay: `${i * 0.05}s`, boxShadow: '0 12px 40px rgba(0,0,0,0.25)' }}
                 >
@@ -203,12 +210,16 @@ export default function CustomerCategory() {
                       disabled={!canAdd}
                       onClick={e => {
                         e.stopPropagation()
+                        if (hasVariants) {
+                          setViewingProduct({ product, allMedia, soldOut, variants })
+                          return
+                        }
                         addItem({ id: product.id, name: product.name, code: product.code, price: product.selling_price, image: cartImage })
                       }}
                       className="mt-2.5 w-full rounded-md py-2 bg-brand-green text-brand-gold hover:opacity-90 transition-opacity font-semibold disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
                       style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.66rem', letterSpacing: '0.1em' }}
                     >
-                      {soldOut ? 'SOLD OUT' : product.selling_price == null ? 'PRICE ON REQUEST' : 'ADD TO CART'}
+                      {soldOut ? 'SOLD OUT' : product.selling_price == null ? 'PRICE ON REQUEST' : hasVariants ? 'CHOOSE COLOUR' : 'ADD TO CART'}
                     </button>
                   </div>
                 </div>
@@ -235,6 +246,7 @@ export default function CustomerCategory() {
           product={viewingProduct.product}
           allMedia={viewingProduct.allMedia}
           soldOut={viewingProduct.soldOut}
+          variants={viewingProduct.variants ?? []}
           onClose={() => setViewingProduct(null)}
           onReview={p => { setViewingProduct(null); setReviewingProduct({ id: p.id, name: p.name }) }}
         />
