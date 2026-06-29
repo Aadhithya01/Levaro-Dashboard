@@ -110,7 +110,11 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
   }
   function removeExistingVariant(id) {
     setRemovedVariantIds(prev => [...prev, id])
-    setVariants(prev => prev.filter(v => v.id !== id))
+    setVariants(prev => {
+      const row = prev.find(v => v.id === id)
+      if (row?.newPreviewUrl) URL.revokeObjectURL(row.newPreviewUrl)
+      return prev.filter(v => v.id !== id)
+    })
   }
   function addNewColorRow() {
     setNewColors(prev => [...prev, { id: crypto.randomUUID(), name: '', file: null, previewUrl: null }])
