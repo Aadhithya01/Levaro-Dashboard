@@ -174,3 +174,15 @@ CREATE POLICY "auth users full access on vendor_orders"
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('order-bills', 'order-bills', true)
 ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "authenticated users can upload order bills"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'order-bills');
+
+CREATE POLICY "authenticated users can delete order bills"
+  ON storage.objects FOR DELETE TO authenticated
+  USING (bucket_id = 'order-bills');
+
+CREATE POLICY "order bills are publicly readable"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'order-bills');
