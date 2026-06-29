@@ -57,7 +57,8 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
       for (const c of colors) {
         if (!c.name.trim()) { setError('Each colour needs a name'); return }
         if (!c.file) { setError(`Add a photo for "${c.name || 'colour'}"`); return }
-        if (isNaN(parseInt(c.qty)) || parseInt(c.qty) < 1) { setError('Each colour needs a valid quantity'); return }
+        const n = parseInt(c.qty)
+        if (isNaN(n) || n < 1) { setError('Each colour needs a valid quantity'); return }
       }
     } else {
       qty = parseInt(quantity)
@@ -138,12 +139,14 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
         product_id: product.id, color_name: c.name, image_url: c.url, image_path: c.path,
       }))
       const { data: variants, error: varErr } = await supabase
-        .from('product_variants').insert(variantRows).select('id, color_name')
+        .from('product_variants').insert(variantRows).select('id')
       if (varErr) {
         await supabase.storage.from('product-images').remove(allUploadPaths)
         await supabase.from('products').delete().eq('id', product.id)
         setError(varErr.message); setLoading(false); return
       }
+      // PostgreSQL preserves insertion order for a bulk INSERT ... RETURNING,
+      // so variants[i] corresponds to colorUploads[i].
       const purchaseRows = variants.map((v, i) => ({
         product_id: product.id, date_of_purchase: today,
         quantity: colorUploads[i].qty, price_per_piece: ppp, variant_id: v.id,
@@ -204,7 +207,7 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
                 <input
                   type="number"
-                  required={!hasColors}
+                  required
                   min="1"
                   value={quantity}
                   onChange={e => setQuantity(e.target.value)}
