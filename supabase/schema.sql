@@ -186,3 +186,23 @@ CREATE POLICY "authenticated users can delete order bills"
 CREATE POLICY "order bills are publicly readable"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'order-bills');
+
+-- Migration: create_product_variants (2026-06-29)
+CREATE TABLE product_variants (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  product_id uuid REFERENCES products(id) ON DELETE CASCADE NOT NULL,
+  color_name text NOT NULL,
+  image_url text,
+  image_path text,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE product_variants ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "auth users full access on product_variants"
+  ON product_variants FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+ALTER TABLE purchases ADD COLUMN variant_id uuid REFERENCES product_variants(id) ON DELETE CASCADE;
+ALTER TABLE sales ADD COLUMN variant_id uuid REFERENCES product_variants(id) ON DELETE CASCADE;
+CREATE INDEX ON purchases(variant_id);
+CREATE INDEX ON sales(variant_id);
+CREATE INDEX ON product_variants(product_id);
