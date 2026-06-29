@@ -109,18 +109,19 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
     }))
   }
   function removeExistingVariant(id) {
-    setRemovedVariantIds(prev => [...prev, id])
     setVariants(prev => {
       const row = prev.find(v => v.id === id)
       if (row?.newPreviewUrl) URL.revokeObjectURL(row.newPreviewUrl)
+      // Capture image_path now so submit can delete the storage object without re-fetching.
+      setRemovedVariantIds(rids => [...rids, { id, image_path: row?.image_path ?? null }])
       return prev.filter(v => v.id !== id)
     })
   }
   function addNewColorRow() {
     setNewColors(prev => [...prev, { id: crypto.randomUUID(), name: '', file: null, previewUrl: null }])
   }
-  function updateNewColor(id, patch) {
-    setNewColors(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c))
+  function renameNewColor(id, value) {
+    setNewColors(prev => prev.map(c => c.id === id ? { ...c, name: value } : c))
   }
   function setNewColorFile(id, file) {
     if (!file) return
@@ -235,6 +236,7 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
     // Rename + replace photos on existing variants
     for (const v of variants) {
       const patch = {}
+      let newPhotoPath = null
       if (v.newName.trim() && v.newName.trim() !== v.color_name) patch.color_name = v.newName.trim()
       if (v.newFile) {
         const ext = v.newFile.name.split('.').pop()
@@ -244,10 +246,17 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
         const { data } = supabase.storage.from('product-images').getPublicUrl(path)
         patch.image_url = data.publicUrl
         patch.image_path = path
-        if (v.image_path) await supabase.storage.from('product-images').remove([v.image_path])
+        newPhotoPath = path
       }
       if (Object.keys(patch).length) {
-        await supabase.from('product_variants').update(patch).eq('id', v.id)
+        const { error: varUpdErr } = await supabase.from('product_variants').update(patch).eq('id', v.id)
+        if (varUpdErr) {
+          // Update failed — drop the just-uploaded photo so it isn't orphaned, keep the old one.
+          if (newPhotoPath) await supabase.storage.from('product-images').remove([newPhotoPath])
+          setError(varUpdErr.message); setLoading(false); return
+        }
+        // Update succeeded — now safe to delete the replaced photo.
+        if (newPhotoPath && v.image_path) await supabase.storage.from('product-images').remove([v.image_path])
       }
     }
 
@@ -259,17 +268,20 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
       const { error: upErr } = await supabase.storage.from('product-images').upload(path, c.file)
       if (upErr) { setError(upErr.message); setLoading(false); return }
       const { data } = supabase.storage.from('product-images').getPublicUrl(path)
-      await supabase.from('product_variants').insert({
+      const { error: insErr } = await supabase.from('product_variants').insert({
         product_id: product.id, color_name: c.name.trim(), image_url: data.publicUrl, image_path: path,
       })
+      if (insErr) {
+        await supabase.storage.from('product-images').remove([path])
+        setError(insErr.message); setLoading(false); return
+      }
     }
 
     // Delete removed variants (UI only allows those with no sales) + their photos.
-    // The variant is already gone from `variants` state, so fetch its image_path from the DB.
-    for (const removedId of removedVariantIds) {
-      const { data: row } = await supabase.from('product_variants').select('image_path').eq('id', removedId).single()
-      if (row?.image_path) await supabase.storage.from('product-images').remove([row.image_path])
-      await supabase.from('product_variants').delete().eq('id', removedId)
+    // image_path was captured when the row was removed from state.
+    for (const removed of removedVariantIds) {
+      if (removed.image_path) await supabase.storage.from('product-images').remove([removed.image_path])
+      await supabase.from('product_variants').delete().eq('id', removed.id)
     }
 
     // All writes succeeded — now safe to delete removed items
@@ -361,7 +373,7 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
                     {c.previewUrl ? <img src={c.previewUrl} alt="" className="w-full h-full object-cover" /> : <span className="text-[9px] text-gray-400">Photo</span>}
                     <input type="file" accept="image/*" className="hidden" onChange={e => { setNewColorFile(c.id, e.target.files[0]); e.target.value = '' }} />
                   </label>
-                  <input type="text" value={c.name} onChange={e => updateNewColor(c.id, { name: e.target.value })}
+                  <input type="text" value={c.name} onChange={e => renameNewColor(c.id, e.target.value)}
                     placeholder={`New colour ${idx + 1}`}
                     className="flex-1 border border-brand-border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green" />
                   <button type="button" onClick={() => removeNewColorRow(c.id)} className="text-xs text-red-400 hover:underline">Remove</button>
