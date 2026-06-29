@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import MediaUploadSection from './MediaUploadSection'
 
@@ -14,9 +14,13 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Revoke colour preview object URLs only on unmount (a ref mirrors the latest
+  // colours so the cleanup doesn't fire on every edit). Replace/remove revoke inline.
+  const colorsRef = useRef([])
+  colorsRef.current = colors
   useEffect(() => () => {
-    colors.forEach(c => { if (c.previewUrl) URL.revokeObjectURL(c.previewUrl) })
-  }, [colors])
+    colorsRef.current.forEach(c => { if (c.previewUrl) URL.revokeObjectURL(c.previewUrl) })
+  }, [])
 
   function addColorRow() {
     setColors(prev => [...prev, { id: crypto.randomUUID(), name: '', qty: '', file: null, previewUrl: null }])
