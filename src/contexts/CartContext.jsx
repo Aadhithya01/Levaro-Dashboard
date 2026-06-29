@@ -41,7 +41,7 @@ export function CartProvider({ children }) {
 
   // product: { id, name, code, price, image, color?, variantId? }
   const addItem = (product) => {
-    const key = `${product.id}::${product.color ?? ''}`
+    const key = cartLineKey(product)
     setItems(prev => {
       const existing = prev.find(i => cartLineKey(i) === key)
       if (existing) {
