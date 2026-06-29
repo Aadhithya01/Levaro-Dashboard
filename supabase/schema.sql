@@ -152,3 +152,25 @@ ON CONFLICT (email) DO NOTHING;
 CREATE INDEX ON ledger_splits(expense_id);
 CREATE INDEX ON ledger_splits(member_id);
 ALTER TABLE ledger_settlements ADD CONSTRAINT settlements_different_members CHECK (from_member <> to_member);
+
+-- Migration: create_vendor_orders (2026-06-29)
+CREATE TABLE vendor_orders (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  vendor_name text NOT NULL,
+  phone text,
+  order_price numeric(10,2),
+  quantity integer CHECK (quantity IS NULL OR quantity > 0),
+  location text,
+  bill_url text,
+  bill_path text,
+  created_by uuid,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE vendor_orders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "auth users full access on vendor_orders"
+  ON vendor_orders FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('order-bills', 'order-bills', true)
+ON CONFLICT (id) DO NOTHING;
