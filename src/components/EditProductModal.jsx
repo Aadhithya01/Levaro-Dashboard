@@ -76,7 +76,7 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
   }, [product.id, product.image_url])
 
   const previewCleanupRef = useRef({ variants: [], newColors: [] })
-  previewCleanupRef.current = { variants, newColors }
+  useEffect(() => { previewCleanupRef.current = { variants, newColors } }, [variants, newColors])
   useEffect(() => () => {
     previewCleanupRef.current.variants.forEach(v => { if (v.newPreviewUrl) URL.revokeObjectURL(v.newPreviewUrl) })
     previewCleanupRef.current.newColors.forEach(c => { if (c.previewUrl) URL.revokeObjectURL(c.previewUrl) })

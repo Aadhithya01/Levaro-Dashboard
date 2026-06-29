@@ -17,7 +17,7 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
   // Revoke colour preview object URLs only on unmount (a ref mirrors the latest
   // colours so the cleanup doesn't fire on every edit). Replace/remove revoke inline.
   const colorsRef = useRef([])
-  colorsRef.current = colors
+  useEffect(() => { colorsRef.current = colors }, [colors])
   useEffect(() => () => {
     colorsRef.current.forEach(c => { if (c.previewUrl) URL.revokeObjectURL(c.previewUrl) })
   }, [])
