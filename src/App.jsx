@@ -7,6 +7,8 @@ import ProductDetail from './pages/ProductDetail'
 import Dashboard from './pages/Dashboard'
 import Ledger from './pages/Ledger'
 import Tasks from './pages/Tasks'
+import Orders from './pages/Orders'
+import CustomerOrders from './pages/CustomerOrders'
 import Welcome from './pages/Welcome'
 import CustomerShop from './pages/CustomerShop'
 import CustomerCategory from './pages/CustomerCategory'
@@ -23,6 +25,8 @@ export default function App() {
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
       <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+      <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+      <Route path="/customer-orders" element={<ProtectedRoute><CustomerOrders /></ProtectedRoute>} />
       <Route path="/set-prices" element={<ProtectedRoute><SetPrices /></ProtectedRoute>} />
       <Route path="/shop" element={<CustomerShop />} />
       <Route path="/shop/:categoryId" element={<CustomerCategory />} />

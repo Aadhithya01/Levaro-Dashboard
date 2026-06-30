@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import CartButton from '../components/customer/CartButton'
+import CartDrawer from '../components/customer/CartDrawer'
 import CustomerFooter from '../components/customer/CustomerFooter'
 import FloatingFeedbackButton from '../components/customer/FloatingFeedbackButton'
 import FloatingSuggestionButton from '../components/customer/FloatingSuggestionButton'
@@ -115,18 +117,21 @@ export default function CustomerShop() {
         <span className="levaro-display text-brand-gold" style={{ letterSpacing: '0.42em', fontSize: '1.05rem' }}>
           LEVARO
         </span>
-        <nav className="hidden md:flex gap-7">
-          {['Collections', 'About', 'Contact'].map(l => (
-            <button
-              key={l}
-              onClick={() => handleNav(l)}
-              className="text-brand-cream/60 hover:text-brand-gold transition-colors uppercase"
-              style={{ fontSize: '0.62rem', letterSpacing: '0.28em' }}
-            >
-              {l}
-            </button>
-          ))}
-        </nav>
+        <div className="flex items-center gap-6">
+          <nav className="hidden md:flex gap-7">
+            {['Collections', 'About', 'Contact'].map(l => (
+              <button
+                key={l}
+                onClick={() => handleNav(l)}
+                className="text-brand-cream/60 hover:text-brand-gold transition-colors uppercase"
+                style={{ fontSize: '0.62rem', letterSpacing: '0.28em' }}
+              >
+                {l}
+              </button>
+            ))}
+          </nav>
+          <CartButton />
+        </div>
       </header>
 
       {/* Side rail */}
@@ -278,6 +283,7 @@ export default function CustomerShop() {
       </div>
       <FloatingFeedbackButton />
       <FloatingSuggestionButton />
+      <CartDrawer />
 
       {showAbout && (
         <div

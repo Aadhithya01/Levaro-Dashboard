@@ -15,6 +15,9 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const originalExtraItemsRef = useRef([])
+  const [variants, setVariants] = useState([]) // existing: { id, color_name, image_url, image_path, salesCount, newName, newFile, newPreviewUrl }
+  const [newColors, setNewColors] = useState([]) // { id, name, file, previewUrl }
+  const [removedVariantIds, setRemovedVariantIds] = useState([])
 
   useEffect(() => {
     async function loadMedia() {
@@ -52,10 +55,32 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
         })
       })
       setMediaItems(items)
+      const { data: variantRows } = await supabase
+        .from('product_variants')
+        .select('id, color_name, image_url, image_path, sales(count)')
+        .eq('product_id', product.id)
+        .order('created_at')
+      setVariants((variantRows ?? []).map(v => ({
+        id: v.id,
+        color_name: v.color_name,
+        image_url: v.image_url,
+        image_path: v.image_path,
+        salesCount: v.sales?.[0]?.count ?? 0,
+        newName: v.color_name,
+        newFile: null,
+        newPreviewUrl: null,
+      })))
       setMediaLoading(false)
     }
     loadMedia()
   }, [product.id, product.image_url])
+
+  const previewCleanupRef = useRef({ variants: [], newColors: [] })
+  useEffect(() => { previewCleanupRef.current = { variants, newColors } }, [variants, newColors])
+  useEffect(() => () => {
+    previewCleanupRef.current.variants.forEach(v => { if (v.newPreviewUrl) URL.revokeObjectURL(v.newPreviewUrl) })
+    previewCleanupRef.current.newColors.forEach(c => { if (c.previewUrl) URL.revokeObjectURL(c.previewUrl) })
+  }, [])
 
   function handleMediaChange(newItems) {
     // Detect if the main image was removed
@@ -70,6 +95,48 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
       setRemovedIds(prev => [...prev, ...removedFromCurrent.map(r => r.id)])
     }
     setMediaItems(newItems)
+  }
+
+  function renameVariant(id, value) {
+    setVariants(prev => prev.map(v => v.id === id ? { ...v, newName: value } : v))
+  }
+  function replaceVariantPhoto(id, file) {
+    if (!file) return
+    setVariants(prev => prev.map(v => {
+      if (v.id !== id) return v
+      if (v.newPreviewUrl) URL.revokeObjectURL(v.newPreviewUrl)
+      return { ...v, newFile: file, newPreviewUrl: URL.createObjectURL(file) }
+    }))
+  }
+  function removeExistingVariant(id) {
+    // Read from the closure (this only runs from a click handler, so state is fresh)
+    // to keep the state updaters pure. Capture image_path so submit can delete the
+    // storage object without re-fetching.
+    const row = variants.find(v => v.id === id)
+    if (row?.newPreviewUrl) URL.revokeObjectURL(row.newPreviewUrl)
+    setRemovedVariantIds(prev => [...prev, { id, image_path: row?.image_path ?? null }])
+    setVariants(prev => prev.filter(v => v.id !== id))
+  }
+  function addNewColorRow() {
+    setNewColors(prev => [...prev, { id: crypto.randomUUID(), name: '', file: null, previewUrl: null }])
+  }
+  function renameNewColor(id, value) {
+    setNewColors(prev => prev.map(c => c.id === id ? { ...c, name: value } : c))
+  }
+  function setNewColorFile(id, file) {
+    if (!file) return
+    setNewColors(prev => prev.map(c => {
+      if (c.id !== id) return c
+      if (c.previewUrl) URL.revokeObjectURL(c.previewUrl)
+      return { ...c, file, previewUrl: URL.createObjectURL(file) }
+    }))
+  }
+  function removeNewColorRow(id) {
+    setNewColors(prev => {
+      const row = prev.find(c => c.id === id)
+      if (row?.previewUrl) URL.revokeObjectURL(row.previewUrl)
+      return prev.filter(c => c.id !== id)
+    })
   }
 
   async function handleSubmit(e) {
@@ -166,6 +233,63 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
       return
     }
 
+    // Rename + replace photos on existing variants
+    for (const v of variants) {
+      const patch = {}
+      let newPhotoPath = null
+      if (v.newName.trim() && v.newName.trim() !== v.color_name) patch.color_name = v.newName.trim()
+      if (v.newFile) {
+        const ext = v.newFile.name.split('.').pop()
+        const path = `${crypto.randomUUID()}.${ext}`
+        const { error: upErr } = await supabase.storage.from('product-images').upload(path, v.newFile)
+        if (upErr) { setError(upErr.message); setLoading(false); return }
+        const { data } = supabase.storage.from('product-images').getPublicUrl(path)
+        patch.image_url = data.publicUrl
+        patch.image_path = path
+        newPhotoPath = path
+      }
+      if (Object.keys(patch).length) {
+        const { error: varUpdErr } = await supabase.from('product_variants').update(patch).eq('id', v.id)
+        if (varUpdErr) {
+          // Update failed — drop the just-uploaded photo so it isn't orphaned, keep the old one.
+          if (newPhotoPath) await supabase.storage.from('product-images').remove([newPhotoPath])
+          setError(varUpdErr.message); setLoading(false); return
+        }
+        // Update succeeded — now safe to delete the replaced photo.
+        if (newPhotoPath && v.image_path) await supabase.storage.from('product-images').remove([v.image_path])
+      }
+    }
+
+    // Add brand-new colours (no stock — added later via Add Stock)
+    for (const c of newColors) {
+      if (!c.name.trim()) continue
+      let imageUrl = null
+      let imagePath = null
+      if (c.file) {
+        const ext = c.file.name.split('.').pop()
+        const path = `${crypto.randomUUID()}.${ext}`
+        const { error: upErr } = await supabase.storage.from('product-images').upload(path, c.file)
+        if (upErr) { setError(upErr.message); setLoading(false); return }
+        const { data } = supabase.storage.from('product-images').getPublicUrl(path)
+        imageUrl = data.publicUrl
+        imagePath = path
+      }
+      const { error: insErr } = await supabase.from('product_variants').insert({
+        product_id: product.id, color_name: c.name.trim(), image_url: imageUrl, image_path: imagePath,
+      })
+      if (insErr) {
+        if (imagePath) await supabase.storage.from('product-images').remove([imagePath])
+        setError(insErr.message); setLoading(false); return
+      }
+    }
+
+    // Delete removed variants (UI only allows those with no sales) + their photos.
+    // image_path was captured when the row was removed from state.
+    for (const removed of removedVariantIds) {
+      if (removed.image_path) await supabase.storage.from('product-images').remove([removed.image_path])
+      await supabase.from('product_variants').delete().eq('id', removed.id)
+    }
+
     // All writes succeeded — now safe to delete removed items
     const uniqueRemovedIds = [...new Set(removedIds)]
     for (const removedId of uniqueRemovedIds) {
@@ -228,6 +352,46 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
           ) : (
             <MediaUploadSection items={mediaItems} onChange={handleMediaChange} />
           )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Colours</label>
+            {variants.length === 0 && newColors.length === 0 && (
+              <p className="text-xs text-gray-400 mb-2">No colours on this product.</p>
+            )}
+            <div className="space-y-2">
+              {variants.map(v => (
+                <div key={v.id} className="flex items-center gap-2 border border-brand-border rounded-lg p-2">
+                  <label className="flex-shrink-0 w-12 h-12 rounded overflow-hidden border border-brand-border cursor-pointer hover:border-brand-green">
+                    <img src={v.newPreviewUrl ?? v.image_url} alt="" className="w-full h-full object-cover" />
+                    <input type="file" accept="image/*" className="hidden" onChange={e => { replaceVariantPhoto(v.id, e.target.files[0]); e.target.value = '' }} />
+                  </label>
+                  <input type="text" value={v.newName} onChange={e => renameVariant(v.id, e.target.value)}
+                    className="flex-1 border border-brand-border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green" />
+                  <button type="button" disabled={v.salesCount > 0} onClick={() => removeExistingVariant(v.id)}
+                    title={v.salesCount > 0 ? 'Has sales — cannot remove' : 'Remove colour'}
+                    className="text-xs text-red-400 hover:underline disabled:text-gray-300 disabled:no-underline disabled:cursor-not-allowed">
+                    Remove
+                  </button>
+                </div>
+              ))}
+              {newColors.map((c, idx) => (
+                <div key={c.id} className="flex items-center gap-2 border border-brand-border rounded-lg p-2 bg-brand-cream/40">
+                  <label className="flex-shrink-0 w-12 h-12 rounded overflow-hidden border-2 border-dashed border-brand-border flex items-center justify-center cursor-pointer hover:border-brand-green">
+                    {c.previewUrl ? <img src={c.previewUrl} alt="" className="w-full h-full object-cover" /> : <span className="text-[9px] text-gray-400">Photo</span>}
+                    <input type="file" accept="image/*" className="hidden" onChange={e => { setNewColorFile(c.id, e.target.files[0]); e.target.value = '' }} />
+                  </label>
+                  <input type="text" value={c.name} onChange={e => renameNewColor(c.id, e.target.value)}
+                    placeholder={`New colour ${idx + 1}`}
+                    className="flex-1 border border-brand-border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green" />
+                  <button type="button" onClick={() => removeNewColorRow(c.id)} className="text-xs text-red-400 hover:underline">Remove</button>
+                </div>
+              ))}
+            </div>
+            <button type="button" onClick={addNewColorRow}
+              className="mt-2 w-full border-2 border-dashed border-brand-border rounded-lg py-2 text-sm text-gray-400 hover:border-brand-green hover:text-brand-green transition-colors">
+              + Add colour
+            </button>
+            <p className="text-[11px] text-gray-400 mt-1">Photo is optional. New colours start with 0 stock — add stock from the product page.</p>
+          </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex gap-2 justify-end">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>

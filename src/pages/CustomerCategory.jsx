@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useCart } from '../contexts/CartContext'
+import CartButton from '../components/customer/CartButton'
+import CartDrawer from '../components/customer/CartDrawer'
 import CustomerFooter from '../components/customer/CustomerFooter'
 import FloatingFeedbackButton from '../components/customer/FloatingFeedbackButton'
 import FloatingSuggestionButton from '../components/customer/FloatingSuggestionButton'
@@ -28,6 +31,7 @@ export default function CustomerCategory() {
   const [loading, setLoading] = useState(true)
   const [reviewingProduct, setReviewingProduct] = useState(null)
   const [viewingProduct, setViewingProduct] = useState(null)
+  const { addItem } = useCart()
 
   useEffect(() => {
     async function load() {
@@ -36,7 +40,7 @@ export default function CustomerCategory() {
           supabase.from('categories').select('name').eq('id', categoryId).single(),
           supabase
             .from('products')
-            .select('id, name, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order)')
+            .select('id, name, code, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order), product_variants(id, color_name, image_url, purchases(quantity), sales(quantity_sold))')
             .eq('category_id', categoryId)
             .order('created_at', { ascending: false }),
         ])
@@ -69,7 +73,9 @@ export default function CustomerCategory() {
         <span className="levaro-display text-brand-gold" style={{ fontSize: '1.05rem', fontWeight: 300, letterSpacing: '0.4em' }}>
           LEVARO
         </span>
-        <div className="w-24" />
+        <div className="w-24 flex justify-end">
+          <CartButton />
+        </div>
       </header>
 
       <Marquee />
@@ -114,12 +120,21 @@ export default function CustomerCategory() {
                 ? (reviewRatings.reduce((s, r) => s + r.rating, 0) / reviewCount).toFixed(1)
                 : null
               const allMedia = buildMedia(product)
+              const variants = (product.product_variants ?? []).map(v => ({
+                id: v.id,
+                color_name: v.color_name,
+                image_url: v.image_url,
+                stock: (v.purchases ?? []).reduce((s, p) => s + p.quantity, 0) - (v.sales ?? []).reduce((s, x) => s + x.quantity_sold, 0),
+              }))
+              const hasVariants = variants.length > 0
+              const canAdd = !soldOut && product.selling_price != null
+              const cartImage = allMedia[0]?.url ?? product.image_url ?? null
 
               return (
                 <div
                   key={product.id}
                   data-hover
-                  onClick={() => setViewingProduct({ product, allMedia, soldOut })}
+                  onClick={() => setViewingProduct({ product, allMedia, soldOut, variants })}
                   className="levaro-card-enter group bg-brand-cream rounded-sm overflow-hidden cursor-pointer transition-transform duration-500 hover:-translate-y-1.5"
                   style={{ animationDelay: `${i * 0.05}s`, boxShadow: '0 12px 40px rgba(0,0,0,0.25)' }}
                 >
@@ -155,37 +170,57 @@ export default function CustomerCategory() {
                     <h4 className="levaro-display text-gray-800 truncate leading-snug" style={{ fontSize: '1.2rem', fontWeight: 500, letterSpacing: '0.01em' }}>
                       {product.name}
                     </h4>
-                    <p className="mt-0.5 font-semibold" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.95rem', color: '#1a5c45' }}>
-                      {product.selling_price != null
-                        ? `₹${Number(product.selling_price).toFixed(0)}`
-                        : <span style={{ color: '#9ca3af', fontWeight: 400, fontSize: '0.8rem' }}>Price on request</span>}
-                    </p>
-
-                    <div className="mt-3 flex items-center justify-between gap-2">
-                      {avgRating ? (
-                        <span className="flex items-center gap-1">
-                          <span className="flex">
-                            {[1, 2, 3, 4, 5].map(s => (
-                              <svg key={s} className="w-2.5 h-2.5" viewBox="0 0 20 20" fill={s <= Math.round(parseFloat(avgRating)) ? '#d4a853' : '#e5e7eb'}>
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
-                          </span>
-                          <span style={{ fontWeight: 600, color: '#374151', fontSize: '0.65rem' }}>{avgRating}</span>
-                          <span style={{ color: '#9ca3af', fontSize: '0.62rem' }}>({reviewCount})</span>
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '0.65rem', color: '#9ca3af' }}>No reviews</span>
-                      )}
+                    {product.code && (
+                      <p className="truncate" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 500 }}>
+                        {product.code}
+                      </p>
+                    )}
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <p className="font-semibold truncate min-w-0" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.95rem', color: '#1a5c45' }}>
+                        {product.selling_price != null
+                          ? `₹${Number(product.selling_price).toFixed(0)}`
+                          : <span style={{ color: '#9ca3af', fontWeight: 400, fontSize: '0.8rem' }}>On request</span>}
+                      </p>
                       <button
                         type="button"
                         onClick={e => { e.stopPropagation(); setReviewingProduct({ id: product.id, name: product.name }) }}
-                        className="border border-brand-green/50 text-brand-green rounded-md px-2.5 py-1 hover:bg-brand-green hover:text-brand-gold transition-all duration-200"
+                        className="flex-shrink-0 border border-brand-green/50 text-brand-green rounded-md px-2.5 py-1 hover:bg-brand-green hover:text-brand-gold transition-all duration-200"
                         style={{ fontSize: '0.62rem', letterSpacing: '0.05em', fontWeight: 600 }}
                       >
                         ★ Review
                       </button>
                     </div>
+
+                    {avgRating && (
+                      <div className="mt-1.5 flex items-center gap-1">
+                        <span className="flex">
+                          {[1, 2, 3, 4, 5].map(s => (
+                            <svg key={s} className="w-2.5 h-2.5" viewBox="0 0 20 20" fill={s <= Math.round(parseFloat(avgRating)) ? '#d4a853' : '#e5e7eb'}>
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                        </span>
+                        <span style={{ fontWeight: 600, color: '#374151', fontSize: '0.65rem' }}>{avgRating}</span>
+                        <span style={{ color: '#9ca3af', fontSize: '0.62rem' }}>({reviewCount})</span>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      disabled={!canAdd}
+                      onClick={e => {
+                        e.stopPropagation()
+                        if (hasVariants) {
+                          setViewingProduct({ product, allMedia, soldOut, variants })
+                          return
+                        }
+                        addItem({ id: product.id, name: product.name, code: product.code, price: product.selling_price, image: cartImage })
+                      }}
+                      className="mt-2.5 w-full rounded-md py-2 bg-brand-green text-brand-gold hover:opacity-90 transition-opacity font-semibold disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+                      style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.66rem', letterSpacing: '0.1em' }}
+                    >
+                      {soldOut ? 'SOLD OUT' : product.selling_price == null ? 'PRICE ON REQUEST' : hasVariants ? 'CHOOSE COLOUR' : 'ADD TO CART'}
+                    </button>
                   </div>
                 </div>
               )
@@ -195,6 +230,7 @@ export default function CustomerCategory() {
       </main>
 
       <CustomerFooter />
+      <CartDrawer />
       <FloatingFeedbackButton />
       <FloatingSuggestionButton />
 
@@ -207,9 +243,11 @@ export default function CustomerCategory() {
       )}
       {viewingProduct && (
         <ProductMediaModal
+          key={viewingProduct.product.id}
           product={viewingProduct.product}
           allMedia={viewingProduct.allMedia}
           soldOut={viewingProduct.soldOut}
+          variants={viewingProduct.variants ?? []}
           onClose={() => setViewingProduct(null)}
           onReview={p => { setViewingProduct(null); setReviewingProduct({ id: p.id, name: p.name }) }}
         />

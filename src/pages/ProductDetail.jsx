@@ -21,6 +21,7 @@ export default function ProductDetail() {
   const navigate = useNavigate()
   const [product, setProduct] = useState(null)
   const [productImages, setProductImages] = useState([])
+  const [variants, setVariants] = useState([]) // { id, color_name, image_url, stock }
   const [purchases, setPurchases] = useState([])
   const [sales, setSales] = useState([])
   const [loading, setLoading] = useState(true)
@@ -32,18 +33,25 @@ export default function ProductDetail() {
   const [zoomOpen, setZoomOpen] = useState(false)
 
   async function fetchData() {
-    const [{ data: prod }, { data: purch }, { data: sale }, { data: rev }, { data: imgs }] = await Promise.all([
+    const [{ data: prod }, { data: purch }, { data: sale }, { data: rev }, { data: imgs }, { data: vars }] = await Promise.all([
       supabase.from('products').select('*').eq('id', id).single(),
       supabase.from('purchases').select('*').eq('product_id', id).order('date_of_purchase', { ascending: false }),
       supabase.from('sales').select('*').eq('product_id', id).order('sale_date', { ascending: false }),
       supabase.from('product_reviews').select('*').eq('product_id', id).order('created_at', { ascending: false }),
       supabase.from('product_images').select('media_url, media_type, sort_order').eq('product_id', id).order('sort_order'),
+      supabase.from('product_variants').select('id, color_name, image_url, purchases(quantity), sales(quantity_sold)').eq('product_id', id).order('created_at'),
     ])
     setProduct(prod)
     setPurchases(purch ?? [])
     setSales(sale ?? [])
     setReviews(rev ?? [])
     setProductImages(imgs ?? [])
+    setVariants((vars ?? []).map(v => ({
+      id: v.id,
+      color_name: v.color_name,
+      image_url: v.image_url,
+      stock: (v.purchases ?? []).reduce((s, p) => s + p.quantity, 0) - (v.sales ?? []).reduce((s, x) => s + x.quantity_sold, 0),
+    })))
     setLoading(false)
   }
 
@@ -58,6 +66,9 @@ export default function ProductDetail() {
   const totalRevenue = sales.reduce((sum, s) => sum + s.quantity_sold * s.selling_price, 0)
   const stock = totalPurchasedQty - totalSoldQty
   const profit = totalRevenue - totalCost
+  const uncolouredStock =
+    purchases.filter(p => !p.variant_id).reduce((s, p) => s + p.quantity, 0) -
+    sales.filter(s => !s.variant_id).reduce((s, x) => s + x.quantity_sold, 0)
 
   return (
     <div className="min-h-screen">
@@ -109,6 +120,32 @@ export default function ProductDetail() {
             </div>
           ))}
         </div>
+
+        {variants.length > 0 && (
+          <div className="mb-8">
+            <h2 className="font-semibold text-brand-green mb-3">Stock by Colour</h2>
+            <div className="flex flex-wrap gap-3">
+              {variants.map(v => (
+                <div key={v.id} className="flex items-center gap-2 bg-white rounded-lg border border-brand-border px-3 py-2">
+                  {v.image_url && <img src={v.image_url} alt={v.color_name} className="w-9 h-9 rounded object-cover" />}
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{v.color_name}</p>
+                    <p className={`text-xs ${v.stock <= 0 ? 'text-red-500' : 'text-brand-green'}`}>{v.stock} in stock</p>
+                  </div>
+                </div>
+              ))}
+              {uncolouredStock > 0 && (
+                <div className="flex items-center gap-2 bg-white rounded-lg border border-brand-border px-3 py-2">
+                  <div className="w-9 h-9 rounded bg-gray-100 border border-brand-border flex items-center justify-center text-gray-400 text-xs">?</div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Uncoloured</p>
+                    <p className="text-xs text-brand-green">{uncolouredStock} in stock</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
@@ -214,10 +251,21 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {showPurchase && <AddPurchaseModal productId={id} onClose={() => setShowPurchase(false)} onAdded={fetchData} />}
-      {editingPurchase && <EditPurchaseModal purchase={editingPurchase} onClose={() => setEditingPurchase(null)} onUpdated={fetchData} />}
-      {showSale && <AddSaleModal productId={id} defaultSellingPrice={product.selling_price} onClose={() => setShowSale(false)} onAdded={fetchData} />}
-      {editingSale && <EditSaleModal sale={editingSale} onClose={() => setEditingSale(null)} onUpdated={fetchData} />}
+      {showPurchase && <AddPurchaseModal productId={id} variants={variants} onClose={() => setShowPurchase(false)} onAdded={fetchData} />}
+      {editingPurchase && <EditPurchaseModal purchase={editingPurchase} variants={variants} onClose={() => setEditingPurchase(null)} onUpdated={fetchData} />}
+      {showSale && <AddSaleModal productId={id} defaultSellingPrice={product.selling_price} variants={variants} availableStock={stock} onClose={() => setShowSale(false)} onAdded={fetchData} />}
+      {editingSale && (
+        <EditSaleModal
+          sale={editingSale}
+          availableStock={
+            editingSale.variant_id
+              ? (variants.find(v => v.id === editingSale.variant_id)?.stock ?? 0)
+              : (variants.length > 0 ? uncolouredStock : stock)
+          }
+          onClose={() => setEditingSale(null)}
+          onUpdated={fetchData}
+        />
+      )}
     </div>
   )
 }

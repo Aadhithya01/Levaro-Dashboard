@@ -1,23 +1,38 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-export default function AddSaleModal({ productId, defaultSellingPrice, onClose, onAdded }) {
+export default function AddSaleModal({ productId, defaultSellingPrice, variants = [], availableStock = 0, onClose, onAdded }) {
   const [form, setForm] = useState({ sale_date: '', quantity_sold: '', selling_price: defaultSellingPrice != null ? String(defaultSellingPrice) : '' })
   const [paymentReceived, setPaymentReceived] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [variantId, setVariantId] = useState('')
 
   function set(field, value) { setForm(f => ({ ...f, [field]: value })) }
+
+  // Stock available for the chosen pool: the selected colour when variants
+  // exist, otherwise the product's overall stock.
+  const available = variants.length > 0
+    ? (variants.find(v => v.id === variantId)?.stock ?? 0)
+    : availableStock
 
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
+    if (variants.length > 0 && !variantId) { setError('Select a colour'); setLoading(false); return }
+    const qty = parseInt(form.quantity_sold)
+    if (isNaN(qty) || qty < 1) { setError('Enter a valid quantity'); setLoading(false); return }
+    if (qty > available) {
+      setError(`Only ${available} in stock${variants.length > 0 ? ' for this colour' : ''} — cannot sell ${qty}.`)
+      setLoading(false); return
+    }
     const { error } = await supabase.from('sales').insert({
       product_id: productId,
       sale_date: form.sale_date,
       quantity_sold: parseInt(form.quantity_sold),
       selling_price: parseFloat(form.selling_price),
       payment_received: paymentReceived,
+      ...(variants.length > 0 && { variant_id: variantId }),
     })
     setLoading(false)
     if (error) { setError(error.message); return }
@@ -35,8 +50,23 @@ export default function AddSaleModal({ productId, defaultSellingPrice, onClose, 
             <input type="date" required value={form.sale_date} onChange={e => set('sale_date', e.target.value)}
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green" />
           </div>
+          {variants.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Colour</label>
+              <select required value={variantId} onChange={e => setVariantId(e.target.value)}
+                className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green">
+                <option value="">Select a colour…</option>
+                {variants.map(v => <option key={v.id} value={v.id}>{v.color_name} — {v.stock} in stock</option>)}
+              </select>
+            </div>
+          )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Quantity Sold</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Quantity Sold
+              {(variants.length === 0 || variantId) && (
+                <span className="text-gray-400 font-normal"> ({available} in stock)</span>
+              )}
+            </label>
             <input type="number" min="1" required value={form.quantity_sold} onChange={e => set('quantity_sold', e.target.value)}
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
               placeholder="e.g. 10" />

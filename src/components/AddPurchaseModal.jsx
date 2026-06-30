@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-export default function AddPurchaseModal({ productId, onClose, onAdded }) {
+export default function AddPurchaseModal({ productId, variants = [], onClose, onAdded }) {
   const [quantity, setQuantity] = useState('')
   const [price, setPrice] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [variantId, setVariantId] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -15,6 +16,7 @@ export default function AddPurchaseModal({ productId, onClose, onAdded }) {
     if (isNaN(qty) || qty < 1) { setError('Enter a valid quantity'); return }
     if (isNaN(ppp) || ppp <= 0) { setError('Enter a valid price'); return }
     if (!date) { setError('Select a date'); return }
+    if (variants.length > 0 && !variantId) { setError('Select a colour'); return }
 
     setLoading(true)
     const { error: err } = await supabase.from('purchases').insert({
@@ -22,6 +24,7 @@ export default function AddPurchaseModal({ productId, onClose, onAdded }) {
       date_of_purchase: date,
       quantity: qty,
       price_per_piece: ppp,
+      ...(variants.length > 0 && { variant_id: variantId }),
     })
     setLoading(false)
     if (err) { setError(err.message); return }
@@ -44,6 +47,16 @@ export default function AddPurchaseModal({ productId, onClose, onAdded }) {
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
             />
           </div>
+          {variants.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Colour</label>
+              <select required value={variantId} onChange={e => setVariantId(e.target.value)}
+                className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green">
+                <option value="">Select a colour…</option>
+                {variants.map(v => <option key={v.id} value={v.id}>{v.color_name}</option>)}
+              </select>
+            </div>
+          )}
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>

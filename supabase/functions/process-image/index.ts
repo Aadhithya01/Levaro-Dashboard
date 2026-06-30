@@ -14,14 +14,45 @@ Deno.serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     const hfToken = Deno.env.get('HUGGINGFACE_TOKEN')
     if (!hfToken) throw new Error('HUGGINGFACE_TOKEN not configured')
+
+    // Require a real signed-in user — this endpoint runs with the service-role
+    // key and consumes paid HuggingFace inference, so it must not be callable
+    // with just the public anon key.
+    const authHeader = req.headers.get('Authorization') ?? ''
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    })
+    const { data: { user }, error: authErr } = await authClient.auth.getUser()
+    if (authErr || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     const formData = await req.formData()
     const file = formData.get('file') as File
     if (!file) throw new Error('No file provided')
+
+    // Reject oversized or non-image uploads before doing any work.
+    const MAX_BYTES = 15 * 1024 * 1024
+    if (!file.type.startsWith('image/')) {
+      return new Response(
+        JSON.stringify({ error: 'Only image files are accepted' }),
+        { status: 415, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    if (file.size > MAX_BYTES) {
+      return new Response(
+        JSON.stringify({ error: 'File too large (max 15 MB)' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     const fileBytes = await file.arrayBuffer()
 

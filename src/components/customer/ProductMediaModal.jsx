@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import MediaSlider from '../MediaSlider'
 import ImageZoomModal from '../ImageZoomModal'
+import { useCart } from '../../contexts/CartContext'
 
 const ZoomIcon = () => (
   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -9,8 +10,30 @@ const ZoomIcon = () => (
   </svg>
 )
 
-export default function ProductMediaModal({ product, allMedia = [], soldOut, onClose, onReview }) {
+export default function ProductMediaModal({ product, allMedia = [], soldOut, variants = [], onClose, onReview }) {
   const [zoomOpen, setZoomOpen] = useState(false)
+  const [selectedVariant, setSelectedVariant] = useState(null)
+  const { addItem } = useCart()
+  const hasVariants = variants.length > 0
+  const displayMedia = selectedVariant?.image_url
+    ? [{ url: selectedVariant.image_url, type: 'image' }]
+    : allMedia
+  const canAdd = product.selling_price != null && (
+    hasVariants ? (selectedVariant && selectedVariant.stock > 0) : !soldOut
+  )
+  const cartImage = selectedVariant?.image_url ?? allMedia[0]?.url ?? product.image_url ?? null
+
+  const handleAdd = () => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      code: product.code,
+      price: product.selling_price,
+      image: cartImage,
+      ...(selectedVariant && { color: selectedVariant.color_name, variantId: selectedVariant.id }),
+    })
+    onClose()
+  }
 
   return (
     <>
@@ -27,11 +50,11 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
           {/* Image — double-click anywhere on it to zoom */}
           <div
             className="relative aspect-square bg-black"
-            onDoubleClick={() => allMedia.length > 0 && setZoomOpen(true)}
-            style={{ cursor: allMedia.length > 0 ? 'zoom-in' : 'default' }}
+            onDoubleClick={() => displayMedia.length > 0 && setZoomOpen(true)}
+            style={{ cursor: displayMedia.length > 0 ? 'zoom-in' : 'default' }}
           >
-            {allMedia.length > 0 ? (
-              <MediaSlider items={allMedia} alwaysShowArrows objectFit="contain" />
+            {displayMedia.length > 0 ? (
+              <MediaSlider items={displayMedia} alwaysShowArrows objectFit="contain" />
             ) : (
               <div className="w-full h-full bg-brand-green/10 flex items-center justify-center">
                 <span
@@ -53,7 +76,7 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
             >✕</button>
 
             {/* Zoom */}
-            {allMedia.length > 0 && (
+            {displayMedia.length > 0 && (
               <button
                 type="button"
                 onClick={() => setZoomOpen(true)}
@@ -77,6 +100,15 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
               {product.name}
             </p>
 
+            {product.code && (
+              <p
+                className="mt-1"
+                style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 500 }}
+              >
+                {product.code}
+              </p>
+            )}
+
             <p
               className="mt-1.5 font-semibold"
               style={{ fontFamily: "'Raleway', sans-serif", fontSize: '1.15rem', color: '#1a5c45' }}
@@ -86,6 +118,34 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
                 : <span style={{ color: '#9ca3af', fontWeight: 400, fontSize: '0.9rem' }}>Price on request</span>
               }
             </p>
+
+            {hasVariants && (
+              <div className="mt-3">
+                <p className="uppercase text-gray-500 mb-1.5" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.6rem', letterSpacing: '0.18em' }}>
+                  Colour {selectedVariant ? `· ${selectedVariant.color_name}` : ''}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {variants.map(v => {
+                    const out = v.stock <= 0
+                    const active = selectedVariant?.id === v.id
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        disabled={out}
+                        onClick={() => setSelectedVariant(v)}
+                        title={out ? `${v.color_name} — sold out` : v.color_name}
+                        className={`relative w-12 h-12 rounded-md overflow-hidden border-2 transition-all ${active ? 'border-brand-green' : 'border-transparent'} ${out ? 'opacity-40 cursor-not-allowed' : 'hover:border-brand-green/50'}`}
+                      >
+                        {v.image_url
+                          ? <img src={v.image_url} alt={v.color_name} className="w-full h-full object-cover" />
+                          : <span className="w-full h-full flex items-center justify-center text-[9px] text-gray-500">{v.color_name}</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {soldOut && (
               <p
@@ -98,8 +158,21 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
 
             <button
               type="button"
+              onClick={handleAdd}
+              disabled={!canAdd}
+              className="mt-4 w-full bg-brand-green text-brand-gold rounded-xl py-3 hover:opacity-90 transition-opacity font-semibold disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+              style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.78rem', letterSpacing: '0.12em' }}
+            >
+              {soldOut ? 'SOLD OUT'
+                : product.selling_price == null ? 'PRICE ON REQUEST'
+                : hasVariants && !selectedVariant ? 'SELECT A COLOUR'
+                : 'ADD TO CART'}
+            </button>
+
+            <button
+              type="button"
               onClick={() => onReview(product)}
-              className="mt-4 w-full border border-brand-green/40 text-brand-green rounded-xl py-2.5 hover:bg-brand-green hover:text-brand-gold transition-all duration-250 font-semibold"
+              className="mt-2 w-full border border-brand-green/40 text-brand-green rounded-xl py-2.5 hover:bg-brand-green hover:text-brand-gold transition-all duration-250 font-semibold"
               style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem', letterSpacing: '0.12em' }}
             >
               ★ WRITE A REVIEW
@@ -109,7 +182,7 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, onC
       </div>
 
       {zoomOpen && (
-        <ImageZoomModal items={allMedia} onClose={() => setZoomOpen(false)} />
+        <ImageZoomModal items={displayMedia} onClose={() => setZoomOpen(false)} />
       )}
     </>
   )

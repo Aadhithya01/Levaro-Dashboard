@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-export default function EditSaleModal({ sale, onClose, onUpdated }) {
+export default function EditSaleModal({ sale, availableStock = 0, onClose, onUpdated }) {
   const [saleDate, setSaleDate] = useState(sale.sale_date)
   const [quantity, setQuantity] = useState(String(sale.quantity_sold))
   const [price, setPrice] = useState(String(sale.selling_price))
   const [paymentReceived, setPaymentReceived] = useState(sale.payment_received ?? true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // availableStock excludes this sale; add its current quantity back to get the
+  // ceiling this entry may grow to without overselling.
+  const maxQty = availableStock + sale.quantity_sold
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -16,6 +20,7 @@ export default function EditSaleModal({ sale, onClose, onUpdated }) {
     if (isNaN(qty) || qty < 1) { setError('Enter a valid quantity'); return }
     if (isNaN(sp) || sp <= 0) { setError('Enter a valid price'); return }
     if (!saleDate) { setError('Select a date'); return }
+    if (qty > maxQty) { setError(`Only ${maxQty} available — cannot sell ${qty}.`); return }
 
     setLoading(true)
     const { error: err } = await supabase.from('sales').update({
@@ -47,7 +52,9 @@ export default function EditSaleModal({ sale, onClose, onUpdated }) {
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Qty Sold</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Qty Sold <span className="text-gray-400 font-normal">(max {maxQty})</span>
+              </label>
               <input
                 type="number"
                 min="1"
