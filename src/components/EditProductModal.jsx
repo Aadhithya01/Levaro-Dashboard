@@ -262,17 +262,23 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
 
     // Add brand-new colours (no stock — added later via Add Stock)
     for (const c of newColors) {
-      if (!c.name.trim() || !c.file) continue
-      const ext = c.file.name.split('.').pop()
-      const path = `${crypto.randomUUID()}.${ext}`
-      const { error: upErr } = await supabase.storage.from('product-images').upload(path, c.file)
-      if (upErr) { setError(upErr.message); setLoading(false); return }
-      const { data } = supabase.storage.from('product-images').getPublicUrl(path)
+      if (!c.name.trim()) continue
+      let imageUrl = null
+      let imagePath = null
+      if (c.file) {
+        const ext = c.file.name.split('.').pop()
+        const path = `${crypto.randomUUID()}.${ext}`
+        const { error: upErr } = await supabase.storage.from('product-images').upload(path, c.file)
+        if (upErr) { setError(upErr.message); setLoading(false); return }
+        const { data } = supabase.storage.from('product-images').getPublicUrl(path)
+        imageUrl = data.publicUrl
+        imagePath = path
+      }
       const { error: insErr } = await supabase.from('product_variants').insert({
-        product_id: product.id, color_name: c.name.trim(), image_url: data.publicUrl, image_path: path,
+        product_id: product.id, color_name: c.name.trim(), image_url: imageUrl, image_path: imagePath,
       })
       if (insErr) {
-        await supabase.storage.from('product-images').remove([path])
+        if (imagePath) await supabase.storage.from('product-images').remove([imagePath])
         setError(insErr.message); setLoading(false); return
       }
     }
@@ -384,7 +390,7 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
               className="mt-2 w-full border-2 border-dashed border-brand-border rounded-lg py-2 text-sm text-gray-400 hover:border-brand-green hover:text-brand-green transition-colors">
               + Add colour
             </button>
-            <p className="text-[11px] text-gray-400 mt-1">New colours start with 0 stock — add stock from the product page.</p>
+            <p className="text-[11px] text-gray-400 mt-1">Photo is optional. New colours start with 0 stock — add stock from the product page.</p>
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex gap-2 justify-end">

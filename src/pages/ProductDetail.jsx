@@ -66,6 +66,9 @@ export default function ProductDetail() {
   const totalRevenue = sales.reduce((sum, s) => sum + s.quantity_sold * s.selling_price, 0)
   const stock = totalPurchasedQty - totalSoldQty
   const profit = totalRevenue - totalCost
+  const uncolouredStock =
+    purchases.filter(p => !p.variant_id).reduce((s, p) => s + p.quantity, 0) -
+    sales.filter(s => !s.variant_id).reduce((s, x) => s + x.quantity_sold, 0)
 
   return (
     <div className="min-h-screen">
@@ -131,6 +134,15 @@ export default function ProductDetail() {
                   </div>
                 </div>
               ))}
+              {uncolouredStock > 0 && (
+                <div className="flex items-center gap-2 bg-white rounded-lg border border-brand-border px-3 py-2">
+                  <div className="w-9 h-9 rounded bg-gray-100 border border-brand-border flex items-center justify-center text-gray-400 text-xs">?</div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Uncoloured</p>
+                    <p className="text-xs text-brand-green">{uncolouredStock} in stock</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -241,8 +253,19 @@ export default function ProductDetail() {
 
       {showPurchase && <AddPurchaseModal productId={id} variants={variants} onClose={() => setShowPurchase(false)} onAdded={fetchData} />}
       {editingPurchase && <EditPurchaseModal purchase={editingPurchase} variants={variants} onClose={() => setEditingPurchase(null)} onUpdated={fetchData} />}
-      {showSale && <AddSaleModal productId={id} defaultSellingPrice={product.selling_price} variants={variants} onClose={() => setShowSale(false)} onAdded={fetchData} />}
-      {editingSale && <EditSaleModal sale={editingSale} onClose={() => setEditingSale(null)} onUpdated={fetchData} />}
+      {showSale && <AddSaleModal productId={id} defaultSellingPrice={product.selling_price} variants={variants} availableStock={stock} onClose={() => setShowSale(false)} onAdded={fetchData} />}
+      {editingSale && (
+        <EditSaleModal
+          sale={editingSale}
+          availableStock={
+            editingSale.variant_id
+              ? (variants.find(v => v.id === editingSale.variant_id)?.stock ?? 0)
+              : (variants.length > 0 ? uncolouredStock : stock)
+          }
+          onClose={() => setEditingSale(null)}
+          onUpdated={fetchData}
+        />
+      )}
     </div>
   )
 }

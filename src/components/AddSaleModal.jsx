@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-export default function AddSaleModal({ productId, defaultSellingPrice, variants = [], onClose, onAdded }) {
+export default function AddSaleModal({ productId, defaultSellingPrice, variants = [], availableStock = 0, onClose, onAdded }) {
   const [form, setForm] = useState({ sale_date: '', quantity_sold: '', selling_price: defaultSellingPrice != null ? String(defaultSellingPrice) : '' })
   const [paymentReceived, setPaymentReceived] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -10,10 +10,22 @@ export default function AddSaleModal({ productId, defaultSellingPrice, variants 
 
   function set(field, value) { setForm(f => ({ ...f, [field]: value })) }
 
+  // Stock available for the chosen pool: the selected colour when variants
+  // exist, otherwise the product's overall stock.
+  const available = variants.length > 0
+    ? (variants.find(v => v.id === variantId)?.stock ?? 0)
+    : availableStock
+
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
     if (variants.length > 0 && !variantId) { setError('Select a colour'); setLoading(false); return }
+    const qty = parseInt(form.quantity_sold)
+    if (isNaN(qty) || qty < 1) { setError('Enter a valid quantity'); setLoading(false); return }
+    if (qty > available) {
+      setError(`Only ${available} in stock${variants.length > 0 ? ' for this colour' : ''} — cannot sell ${qty}.`)
+      setLoading(false); return
+    }
     const { error } = await supabase.from('sales').insert({
       product_id: productId,
       sale_date: form.sale_date,
@@ -49,7 +61,12 @@ export default function AddSaleModal({ productId, defaultSellingPrice, variants 
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Quantity Sold</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Quantity Sold
+              {(variants.length === 0 || variantId) && (
+                <span className="text-gray-400 font-normal"> ({available} in stock)</span>
+              )}
+            </label>
             <input type="number" min="1" required value={form.quantity_sold} onChange={e => set('quantity_sold', e.target.value)}
               className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
               placeholder="e.g. 10" />
