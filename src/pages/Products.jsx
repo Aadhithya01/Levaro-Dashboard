@@ -62,7 +62,7 @@ export default function Products() {
       supabase.from('categories').select('name').eq('id', categoryId).single(),
       supabase
         .from('products')
-        .select('*, purchases(quantity, price_per_piece), sales(quantity_sold, selling_price), product_reviews(count), product_images(media_url, media_type, sort_order)')
+        .select('*, purchases(quantity, price_per_piece), sales(quantity_sold, selling_price), product_reviews(count), product_images(media_url, media_type, sort_order), product_variants(id, color_name)')
         .eq('category_id', categoryId)
         .order('created_at', { ascending: false }),
     ])
@@ -231,6 +231,7 @@ export default function Products() {
       {stockingProduct && (
         <AddPurchaseModal
           productId={stockingProduct.id}
+          variants={stockingProduct.product_variants ?? []}
           onClose={() => setStockingProduct(null)}
           onAdded={fetchData}
         />

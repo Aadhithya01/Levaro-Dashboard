@@ -240,7 +240,7 @@ export default function ProductDetail() {
       </div>
 
       {showPurchase && <AddPurchaseModal productId={id} variants={variants} onClose={() => setShowPurchase(false)} onAdded={fetchData} />}
-      {editingPurchase && <EditPurchaseModal purchase={editingPurchase} onClose={() => setEditingPurchase(null)} onUpdated={fetchData} />}
+      {editingPurchase && <EditPurchaseModal purchase={editingPurchase} variants={variants} onClose={() => setEditingPurchase(null)} onUpdated={fetchData} />}
       {showSale && <AddSaleModal productId={id} defaultSellingPrice={product.selling_price} variants={variants} onClose={() => setShowSale(false)} onAdded={fetchData} />}
       {editingSale && <EditSaleModal sale={editingSale} onClose={() => setEditingSale(null)} onUpdated={fetchData} />}
     </div>
