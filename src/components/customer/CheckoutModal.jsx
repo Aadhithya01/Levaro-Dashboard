@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { supabase } from '../../lib/supabase'
 
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER
 
@@ -80,6 +81,33 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
       setPhoneError('Please enter a valid 10-digit phone number.')
       return
     }
+
+    // Log the order to the admin app (best-effort). Fire-and-forget — we do NOT
+    // await before window.open, or a popup blocker may swallow the WhatsApp
+    // handoff. A logging failure must never stop the customer's order.
+    supabase
+      .from('customer_orders')
+      .insert({
+        customer_name: name.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
+        landmark: landmark.trim() || null,
+        location_url: locationUrl || null,
+        items: items.map(i => ({
+          product_id: i.id,
+          name: i.name,
+          code: i.code ?? null,
+          color: i.color ?? null,
+          variant_id: i.variantId ?? null,
+          qty: i.qty,
+          price: i.price,
+        })),
+        total,
+      })
+      .then(({ error }) => {
+        if (error) console.error('Failed to log customer order:', error)
+      })
+
     const message = buildMessage({
       name: name.trim(),
       phone: phone.trim(),

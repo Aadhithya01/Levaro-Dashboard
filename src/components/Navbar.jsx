@@ -15,6 +15,7 @@ export default function Navbar() {
   const ledgerActive = pathname.startsWith('/ledger')
   const tasksActive = pathname.startsWith('/tasks')
   const ordersActive = pathname.startsWith('/orders')
+  const custOrdersActive = pathname.startsWith('/customer-orders')
   const pricesActive = pathname.startsWith('/set-prices')
 
   const avatarUrl = user?.user_metadata?.avatar_url
@@ -54,6 +55,12 @@ export default function Navbar() {
             className={`text-sm transition-colors ${ordersActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
           >
             Orders
+          </Link>
+          <Link
+            to="/customer-orders"
+            className={`text-sm transition-colors ${custOrdersActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
+          >
+            Customer Orders
           </Link>
           <Link
             to="/set-prices"
