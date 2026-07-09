@@ -73,7 +73,7 @@ export default function ProductDetail() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
+      <div className="lv-page max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
         <button onClick={() => navigate(-1)} className="text-sm text-brand-green hover:underline mb-4 block">← Back</button>
 
         {(() => {
@@ -114,7 +114,7 @@ export default function ProductDetail() {
             { label: 'Total Revenue', value: `₹${totalRevenue.toFixed(2)}`, bg: 'bg-brand-gold/10 border-brand-gold/20', color: 'text-gray-800' },
             { label: 'Profit', value: `₹${profit.toFixed(2)}`, bg: profit >= 0 ? 'bg-brand-green/5 border-brand-green/20' : 'bg-red-50 border-red-200', color: profit >= 0 ? 'text-brand-green' : 'text-red-500' },
           ].map(({ label, value, bg, color }) => (
-            <div key={label} className={`rounded-lg border p-4 ${bg}`}>
+            <div key={label} className={`rounded-2xl border p-4 ${bg} backdrop-blur-sm shadow-[0_10px_26px_-14px_rgba(26,92,69,0.22)]`}>
               <p className="text-xs text-gray-400 mb-1">{label}</p>
               <p className={`text-lg font-semibold ${color}`}>{value}</p>
             </div>
@@ -126,7 +126,7 @@ export default function ProductDetail() {
             <h2 className="font-semibold text-brand-green mb-3">Stock by Colour</h2>
             <div className="flex flex-wrap gap-3">
               {variants.map(v => (
-                <div key={v.id} className="flex items-center gap-2 bg-white rounded-lg border border-brand-border px-3 py-2">
+                <div key={v.id} className="flex items-center gap-2 lv-card px-3 py-2">
                   {v.image_url && <img src={v.image_url} alt={v.color_name} className="w-9 h-9 rounded object-cover" />}
                   <div>
                     <p className="text-sm font-medium text-gray-800">{v.color_name}</p>
@@ -135,7 +135,7 @@ export default function ProductDetail() {
                 </div>
               ))}
               {uncolouredStock > 0 && (
-                <div className="flex items-center gap-2 bg-white rounded-lg border border-brand-border px-3 py-2">
+                <div className="flex items-center gap-2 lv-card px-3 py-2">
                   <div className="w-9 h-9 rounded bg-gray-100 border border-brand-border flex items-center justify-center text-gray-400 text-xs">?</div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Uncoloured</p>
@@ -150,12 +150,12 @@ export default function ProductDetail() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-brand-green">Stock Purchases</h2>
-            <button onClick={() => setShowPurchase(true)} className="text-sm bg-brand-green text-brand-gold px-3 py-1.5 rounded hover:opacity-90">+ Add Stock</button>
+            <button onClick={() => setShowPurchase(true)} className="text-sm lv-btn px-3 py-1.5">+ Add Stock</button>
           </div>
           {purchases.length === 0 ? (
             <p className="text-gray-400 text-sm">No stock entries yet.</p>
           ) : (
-            <div className="bg-white rounded-lg border border-brand-border overflow-x-auto">
+            <div className="lv-card overflow-x-auto">
               <table className="w-full text-sm min-w-[480px]">
                 <thead className="bg-brand-green">
                   <tr>
@@ -192,12 +192,12 @@ export default function ProductDetail() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-brand-green">Sales</h2>
-            <button onClick={() => setShowSale(true)} className="text-sm bg-brand-green text-brand-gold px-3 py-1.5 rounded hover:opacity-90">+ Add Sale</button>
+            <button onClick={() => setShowSale(true)} className="text-sm lv-btn px-3 py-1.5">+ Add Sale</button>
           </div>
           {sales.length === 0 ? (
             <p className="text-gray-400 text-sm">No sales yet.</p>
           ) : (
-            <div className="bg-white rounded-lg border border-brand-border overflow-x-auto">
+            <div className="lv-card overflow-x-auto">
               <table className="w-full text-sm min-w-[480px]">
                 <thead className="bg-brand-green">
                   <tr>
@@ -235,7 +235,7 @@ export default function ProductDetail() {
           ) : (
             <div className="space-y-3">
               {reviews.map(r => (
-                <div key={r.id} className="bg-white rounded-lg border border-brand-border px-4 py-3">
+                <div key={r.id} className="lv-card px-4 py-3">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-gray-800">{r.reviewer_name}</span>

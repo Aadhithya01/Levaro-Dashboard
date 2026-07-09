@@ -91,8 +91,8 @@ export default function EditPurchaseModal({ purchase, variants = [], onClose, on
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
+    <div className="lv-overlay flex items-center justify-center z-50 p-4">
+      <div className="lv-modal p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4 text-brand-green">Edit Stock Entry</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -102,7 +102,7 @@ export default function EditPurchaseModal({ purchase, variants = [], onClose, on
               required
               value={date}
               onChange={e => setDate(e.target.value)}
-              className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
+              className="w-full lv-input text-sm"
             />
           </div>
 
@@ -117,7 +117,7 @@ export default function EditPurchaseModal({ purchase, variants = [], onClose, on
                   required
                   value={price}
                   onChange={e => setPrice(e.target.value)}
-                  className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
+                  className="w-full lv-input text-sm"
                 />
               </div>
               <div>
@@ -168,7 +168,7 @@ export default function EditPurchaseModal({ purchase, variants = [], onClose, on
                   required
                   value={quantity}
                   onChange={e => setQuantity(e.target.value)}
-                  className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
+                  className="w-full lv-input text-sm"
                 />
               </div>
               <div className="flex-1">
@@ -180,7 +180,7 @@ export default function EditPurchaseModal({ purchase, variants = [], onClose, on
                   required
                   value={price}
                   onChange={e => setPrice(e.target.value)}
-                  className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
+                  className="w-full lv-input text-sm"
                 />
               </div>
             </div>
@@ -189,7 +189,7 @@ export default function EditPurchaseModal({ purchase, variants = [], onClose, on
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex gap-2 justify-end">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
-            <button type="submit" disabled={loading || (hasVariants && !splitMatches)} className="px-4 py-2 text-sm bg-brand-green text-brand-gold rounded hover:opacity-90 disabled:opacity-50">
+            <button type="submit" disabled={loading || (hasVariants && !splitMatches)} className="px-4 py-2 text-sm lv-btn disabled:opacity-50">
               {loading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>

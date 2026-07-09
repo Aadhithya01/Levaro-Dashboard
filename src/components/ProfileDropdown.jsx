@@ -70,7 +70,7 @@ export default function ProfileDropdown({ onClose }) {
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-lg border border-brand-border z-50 overflow-hidden"
+      className="lv-page absolute right-0 top-full mt-2 w-72 bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_24px_60px_-20px_rgba(8,38,28,0.45)] border border-white/70 z-50 overflow-hidden"
     >
       <div className="bg-brand-green/5 px-4 py-3 border-b border-brand-border">
         <div className="flex items-center gap-3">
@@ -131,7 +131,7 @@ export default function ProfileDropdown({ onClose }) {
         <button
           type="submit"
           disabled={pwLoading || !pwNew || !pwConfirm}
-          className="w-full bg-brand-green text-brand-gold text-xs py-1.5 rounded hover:opacity-90 disabled:opacity-40"
+          className="w-full lv-btn text-xs py-1.5 disabled:opacity-40"
         >
           {pwLoading ? 'Updating...' : 'Update password'}
         </button>

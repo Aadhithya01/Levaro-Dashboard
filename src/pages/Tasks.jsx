@@ -7,7 +7,7 @@ function TaskRow({ task, memberMap, today, onToggle }) {
   const overdue = task.due_date && task.due_date < today && task.status === 'pending'
   const assignee = task.assigned_to ? memberMap[task.assigned_to] : null
   return (
-    <div className="bg-white rounded-lg border border-brand-border px-4 py-3 flex items-center gap-3">
+    <div className="lv-card px-4 py-3 flex items-center gap-3">
       <button
         type="button"
         onClick={() => onToggle(task)}
@@ -82,12 +82,12 @@ export default function Tasks() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-3xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
+      <div className="lv-page max-w-3xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
         <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
           <h1 className="text-xl font-bold text-brand-green">Tasks</h1>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-brand-green text-brand-gold px-4 py-2 rounded text-sm font-semibold hover:opacity-90"
+            className="lv-btn px-4 py-2 text-sm font-semibold"
           >
             + Add Task
           </button>
@@ -101,7 +101,7 @@ export default function Tasks() {
             <p className="text-gray-400 text-xs mb-5">Add tasks to track what needs to be done</p>
             <button
               onClick={() => setShowModal(true)}
-              className="bg-brand-green text-brand-gold px-4 py-2 rounded text-sm font-semibold hover:opacity-90"
+              className="lv-btn px-4 py-2 text-sm font-semibold"
             >
               + Add Task
             </button>

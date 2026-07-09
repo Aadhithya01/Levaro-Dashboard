@@ -109,13 +109,13 @@ export default function Ledger() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
+      <div className="lv-page max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
         <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
           <h1 className="text-xl font-bold text-brand-green">Ledger</h1>
           <div className="flex gap-2">
             <button
               onClick={() => setShowExpense(true)}
-              className="bg-brand-green text-brand-gold px-4 py-2 rounded text-sm font-semibold hover:opacity-90"
+              className="lv-btn px-4 py-2 text-sm font-semibold"
             >
               + Add Expense
             </button>
@@ -139,7 +139,7 @@ export default function Ledger() {
                 const debtor = net > 0 ? a : b
                 const creditor = net > 0 ? b : a
                 return (
-                  <div key={`${a.id}-${b.id}`} className={`bg-white rounded-xl border p-4 ${border}`}>
+                  <div key={`${a.id}-${b.id}`} className={`bg-white/85 backdrop-blur-sm rounded-2xl border p-4 shadow-[0_10px_28px_-14px_rgba(26,92,69,0.18)] ${border}`}>
                     <p className="text-xs text-gray-400 font-medium mb-2">{a.name} · {b.name}</p>
                     {settled ? (
                       <p className="text-brand-green font-semibold text-sm">Settled ✓</p>
@@ -163,7 +163,7 @@ export default function Ledger() {
                 {feed.map(item => {
                   const isOwner = item.created_by === user?.id
                   return item._type === 'expense' ? (
-                    <div key={item.id} className="group bg-white rounded-lg border border-brand-border px-4 py-3 flex items-center gap-3">
+                    <div key={item.id} className="group lv-card px-4 py-3 flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-brand-green/10 flex items-center justify-center flex-shrink-0">
                         <span className="text-brand-green text-xs font-bold">₹</span>
                       </div>
@@ -198,7 +198,7 @@ export default function Ledger() {
                       )}
                     </div>
                   ) : (
-                    <div key={item.id} className="group bg-white rounded-lg border border-brand-border px-4 py-3 flex items-center gap-3">
+                    <div key={item.id} className="group lv-card px-4 py-3 flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -265,8 +265,8 @@ export default function Ledger() {
       )}
 
       {confirmDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs">
+        <div className="lv-overlay flex items-center justify-center z-50 p-4">
+          <div className="lv-modal p-6 w-full max-w-xs">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                 <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

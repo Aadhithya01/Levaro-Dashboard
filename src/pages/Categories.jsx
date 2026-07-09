@@ -60,12 +60,12 @@ export default function Categories() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
+      <div className="lv-page max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-brand-green">Categories</h1>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-brand-green text-brand-gold px-4 py-2 rounded text-sm font-semibold hover:opacity-90"
+            className="lv-btn px-4 py-2 text-sm font-semibold"
           >
             + Add Category
           </button>
@@ -73,11 +73,11 @@ export default function Categories() {
 
         {!loading && categories.length > 0 && (
           <div className="flex gap-5 mb-6">
-            <div className="bg-white rounded-lg border border-brand-border px-4 py-2 text-sm">
+            <div className="lv-chip px-4 py-2 text-sm">
               <span className="font-semibold text-brand-green">{categories.length}</span>
               <span className="text-gray-400 ml-1">categories</span>
             </div>
-            <div className="bg-white rounded-lg border border-brand-border px-4 py-2 text-sm">
+            <div className="lv-chip px-4 py-2 text-sm">
               <span className="font-semibold text-brand-green">{totalProducts}</span>
               <span className="text-gray-400 ml-1">products total</span>
             </div>
@@ -97,7 +97,7 @@ export default function Categories() {
             <p className="text-gray-400 text-xs mb-5">Create your first category to start organising products</p>
             <button
               onClick={() => setShowModal(true)}
-              className="bg-brand-green text-brand-gold px-4 py-2 rounded text-sm font-semibold hover:opacity-90"
+              className="lv-btn px-4 py-2 text-sm font-semibold"
             >
               + Add Category
             </button>
@@ -110,7 +110,7 @@ export default function Categories() {
                 <div
                   key={cat.id}
                   onClick={() => navigate(`/categories/${cat.id}`)}
-                  className="relative group aspect-square rounded-xl overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-brand-green transition-all shadow-sm"
+                  className="lv-lift relative group aspect-square rounded-2xl overflow-hidden cursor-pointer shadow-[0_10px_30px_-14px_rgba(26,92,69,0.25)]"
                 >
                   <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
@@ -154,7 +154,7 @@ export default function Categories() {
                 <div
                   key={cat.id}
                   onClick={() => navigate(`/categories/${cat.id}`)}
-                  className="relative group bg-white rounded-xl p-6 flex flex-col items-center cursor-pointer border border-brand-border hover:border-brand-green hover:shadow-md transition-all"
+                  className="lv-card lv-lift relative group p-6 flex flex-col items-center cursor-pointer"
                 >
                   <div className="w-14 h-14 rounded-full bg-brand-green flex items-center justify-center mb-3">
                     <span className="text-2xl font-bold text-brand-gold">
