@@ -53,6 +53,7 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
   const [geoError, setGeoError] = useState('')
   const [phoneError, setPhoneError] = useState('')
   const [method, setMethod] = useState('upi') // 'upi' | 'cod'
+  const [confirming, setConfirming] = useState(false) // inline "place this order?" prompt
 
   const [proof, setProof] = useState(null)   // { url, path } | null
   const [uploading, setUploading] = useState(false)
@@ -302,7 +303,8 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
               <div className="mt-4 grid grid-cols-2 gap-2">
                 {[{ key: 'upi', label: 'Pay via UPI' }, { key: 'cod', label: 'Cash on Delivery' }].map(m => (
                   <button
-                    key={m.key} type="button" onClick={() => setMethod(m.key)}
+                    key={m.key} type="button" onClick={() => { setMethod(m.key); setConfirming(false) }}
+                    aria-pressed={method === m.key}
                     className={`rounded-xl py-2.5 border transition-colors font-semibold ${method === m.key ? 'border-brand-green bg-brand-green/5 text-brand-green' : 'border-gray-200 text-gray-600 hover:border-brand-green'}`}
                     style={labelStyle}
                   >
@@ -359,20 +361,44 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                 </p>
               )}
 
-              <button
-                type="button" onClick={handleSend} disabled={numberMissing}
-                className="mt-5 w-full bg-brand-green text-brand-gold rounded-xl py-3 hover:opacity-90 transition-opacity font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem', letterSpacing: '0.12em' }}
-              >
-                {method === 'upi' ? "I'VE PAID — SEND ORDER ON WHATSAPP" : 'PLACE ORDER ON WHATSAPP'}
-              </button>
-              <button
-                type="button" onClick={() => setStep('details')}
-                className="mt-2 w-full text-gray-400 hover:text-gray-600 transition-colors"
-                style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem', letterSpacing: '0.06em' }}
-              >
-                Back to details
-              </button>
+              {confirming ? (
+                <div className="mt-5">
+                  <p className="text-center text-gray-600" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem' }}>
+                    Place this order? We'll open WhatsApp to send it to us.
+                  </p>
+                  <button
+                    type="button" onClick={handleSend} disabled={numberMissing}
+                    className="mt-3 w-full bg-brand-green text-brand-gold rounded-xl py-3 hover:opacity-90 transition-opacity font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem', letterSpacing: '0.12em' }}
+                  >
+                    YES, PLACE ORDER
+                  </button>
+                  <button
+                    type="button" onClick={() => setConfirming(false)}
+                    className="mt-2 w-full text-gray-400 hover:text-gray-600 transition-colors"
+                    style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem', letterSpacing: '0.06em' }}
+                  >
+                    Back
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button" onClick={() => setConfirming(true)} disabled={numberMissing}
+                    className="mt-5 w-full bg-brand-green text-brand-gold rounded-xl py-3 hover:opacity-90 transition-opacity font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem', letterSpacing: '0.12em' }}
+                  >
+                    PLACE ORDER
+                  </button>
+                  <button
+                    type="button" onClick={() => setStep('details')}
+                    className="mt-2 w-full text-gray-400 hover:text-gray-600 transition-colors"
+                    style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem', letterSpacing: '0.06em' }}
+                  >
+                    Back to details
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
