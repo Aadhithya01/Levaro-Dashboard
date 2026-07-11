@@ -103,6 +103,11 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
 
   const numberMissing = !WHATSAPP_NUMBER
 
+  // UPI deep link with the amount pre-filled — tapping it opens the customer's
+  // UPI app (GPay/PhonePe/Paytm chooser) on the payment screen. Works reliably
+  // on Android; the QR + UPI ID below stay as the fallback for iOS/desktop.
+  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent('LEVARO')}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent('LEVARO order')}`
+
   const handlePhoneChange = (e) => {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 10)
     setPhone(digits)
@@ -316,15 +321,33 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
               {/* UPI panel */}
               {method === 'upi' && (
                 <div className="mt-4 flex flex-col items-center text-center">
-                  <img src={upiQr} alt="UPI QR code" className="w-52 h-52 object-contain rounded-xl border border-gray-100" />
+                  <img src={upiQr} alt="UPI QR code" className="w-44 h-44 object-contain rounded-xl border border-gray-100" />
                   <p className="mt-2 text-gray-900 font-semibold" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '1.05rem' }}>
                     Pay ₹{total.toFixed(0)}
                   </p>
-                  <p className="text-gray-500 select-all" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem' }}>
-                    UPI ID: {UPI_ID}
+                  <a
+                    href={upiPayUrl}
+                    className="mt-2 w-full bg-brand-green text-brand-gold rounded-xl py-2.5 hover:opacity-90 transition-opacity font-semibold flex items-center justify-center gap-1.5"
+                    style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.78rem', letterSpacing: '0.06em' }}
+                  >
+                    Pay ₹{total.toFixed(0)} in your UPI app
+                  </a>
+                  <p className="mt-2 text-gray-500 select-all" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem' }}>
+                    or scan the QR above · UPI ID: {UPI_ID}
+                  </p>
+                  <a
+                    href={upiQr}
+                    download="levaro-upi-qr.png"
+                    className="mt-2 w-full border border-brand-green text-brand-green rounded-xl py-2.5 hover:bg-brand-green/5 transition-colors font-semibold flex items-center justify-center gap-1.5"
+                    style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem', letterSpacing: '0.04em' }}
+                  >
+                    ⬇ Save QR to gallery
+                  </a>
+                  <p className="mt-1 text-gray-400" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
+                    Then import it from your gallery in any UPI app to pay.
                   </p>
                   <p className="mt-1 text-gray-400" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
-                    Scan, enter the amount, and pay. If your app allows a screenshot you can attach it below; otherwise just share the receipt on WhatsApp.
+                    After paying, attach the screenshot below if your app allows it; otherwise just share the receipt on WhatsApp.
                   </p>
                   <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleProofFile} />
                   {proof ? (
