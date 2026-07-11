@@ -274,3 +274,43 @@ CREATE POLICY "anyone_insert_customer_orders"
   ON customer_orders FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "auth users full access on customer_orders"
   ON customer_orders FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Migration: checkout_payment_options (2026-07-11)
+-- Adds payment method/status/proof to storefront orders + a bucket for UPI
+-- payment screenshots. Anon stays INSERT-only everywhere (no SELECT/LIST).
+ALTER TABLE customer_orders
+  ADD COLUMN payment_method text NOT NULL DEFAULT 'cod',
+  ADD COLUMN payment_status text NOT NULL DEFAULT 'unpaid',
+  ADD COLUMN payment_proof_url  text,
+  ADD COLUMN payment_proof_path text;
+
+ALTER TABLE customer_orders
+  ADD CONSTRAINT customer_orders_payment_method_chk
+    CHECK (payment_method IN ('upi','cod')),
+  ADD CONSTRAINT customer_orders_payment_status_chk
+    CHECK (payment_status IN ('unpaid','claimed')),
+  ADD CONSTRAINT customer_orders_proof_url_len
+    CHECK (payment_proof_url IS NULL OR char_length(payment_proof_url) <= 500),
+  ADD CONSTRAINT customer_orders_proof_path_len
+    CHECK (payment_proof_path IS NULL OR char_length(payment_proof_path) <= 300);
+
+-- Widen the anon INSERT grant to include the new payment columns.
+GRANT INSERT (customer_name, phone, address, landmark, location_url, items, total,
+              payment_method, payment_status, payment_proof_url, payment_proof_path)
+  ON customer_orders TO anon;
+
+-- Payment-proof screenshots. Public bucket like order-bills, but with NO broad
+-- read/list policy: objects are reachable only via their exact (unguessable
+-- UUID) CDN URL, so proofs can't be anonymously enumerated. Anon may upload only.
+INSERT INTO storage.buckets (id, name, public)
+  VALUES ('payment-proofs', 'payment-proofs', true)
+  ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "anon upload payment proofs"
+  ON storage.objects FOR INSERT TO anon
+  WITH CHECK (bucket_id = 'payment-proofs');
+
+CREATE POLICY "auth manage payment proofs"
+  ON storage.objects FOR ALL TO authenticated
+  USING (bucket_id = 'payment-proofs')
+  WITH CHECK (bucket_id = 'payment-proofs');
