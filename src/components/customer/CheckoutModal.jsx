@@ -6,7 +6,7 @@ const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER
 const UPI_ID = 'aadhithyaraja180-2@oksbi'
 const ALLOWED_PROOF_EXT = ['jpg', 'jpeg', 'png', 'webp', 'heic']
 
-function buildMessage({ name, phone, address, landmark, locationUrl, items, total, paymentMethod, hasProof }) {
+function buildMessage({ name, phone, address, landmark, locationUrl, items, total, hasProof }) {
   const orderLines = items.map((i, idx) => {
     const codePart = i.code ? ` (${i.code})` : ''
     const colorPart = i.color ? ` — ${i.color}` : ''
@@ -21,10 +21,7 @@ function buildMessage({ name, phone, address, landmark, locationUrl, items, tota
   if (landmark) details.push(`Landmark: ${landmark}`)
   if (locationUrl) details.push(`Location: ${locationUrl}`)
 
-  const paymentLine = paymentMethod === 'upi'
-    ? `Payment: Paid via UPI${hasProof ? ' (screenshot uploaded)' : ''}`
-    : `Payment: Cash on Delivery`
-  details.push(paymentLine)
+  details.push(`Payment: Paid via UPI${hasProof ? ' (screenshot uploaded)' : ''}`)
 
   return [
     `Hello LEVARO team,`,
@@ -52,7 +49,6 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
   const [locating, setLocating] = useState(false)
   const [geoError, setGeoError] = useState('')
   const [phoneError, setPhoneError] = useState('')
-  const [method, setMethod] = useState('upi') // 'upi' | 'cod'
   const [confirming, setConfirming] = useState(false) // inline "place this order?" prompt
 
   const [proof, setProof] = useState(null)   // { url, path } | null
@@ -151,9 +147,6 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
     if (numberMissing) return
     if (sendingRef.current) return // guard against a fast double-click → duplicate orders
     sendingRef.current = true
-    const paymentStatus = method === 'upi' ? 'claimed' : 'unpaid'
-    // Only a UPI order carries a payment proof — never attach one to COD.
-    const orderProof = method === 'upi' ? proof : null
 
     supabase
       .from('customer_orders')
@@ -173,10 +166,10 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
           price: i.price,
         })),
         total,
-        payment_method: method,
-        payment_status: paymentStatus,
-        payment_proof_url: orderProof?.url ?? null,
-        payment_proof_path: orderProof?.path ?? null,
+        payment_method: 'upi',
+        payment_status: 'claimed',
+        payment_proof_url: proof?.url ?? null,
+        payment_proof_path: proof?.path ?? null,
       })
       .then(({ error }) => {
         if (error) console.error('Failed to log customer order:', error)
@@ -190,8 +183,7 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
       locationUrl,
       items,
       total,
-      paymentMethod: method,
-      hasProof: !!orderProof,
+      hasProof: !!proof,
     })
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
     window.open(url, '_blank', 'noopener,noreferrer')
@@ -304,23 +296,8 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                 Total payable: ₹{total.toFixed(0)}
               </p>
 
-              {/* Method selector */}
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                {[{ key: 'upi', label: 'Pay via UPI' }, { key: 'cod', label: 'Cash on Delivery' }].map(m => (
-                  <button
-                    key={m.key} type="button" onClick={() => { setMethod(m.key); setConfirming(false) }}
-                    aria-pressed={method === m.key}
-                    className={`rounded-xl py-2.5 border transition-colors font-semibold ${method === m.key ? 'border-brand-green bg-brand-green/5 text-brand-green' : 'border-gray-200 text-gray-600 hover:border-brand-green'}`}
-                    style={labelStyle}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* UPI panel */}
-              {method === 'upi' && (
-                <div className="mt-4 flex flex-col items-center text-center">
+              {/* UPI payment */}
+              <div className="mt-4 flex flex-col items-center text-center">
                   <img src={upiQr} alt="UPI QR code" className="w-44 h-44 object-contain rounded-xl border border-gray-100" />
                   <p className="mt-2 text-gray-900 font-semibold" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '1.05rem' }}>
                     Pay ₹{total.toFixed(0)}
@@ -376,13 +353,6 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                     </p>
                   )}
                 </div>
-              )}
-
-              {method === 'cod' && (
-                <p className="mt-4 text-gray-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem' }}>
-                  Pay in cash when your order is delivered. We'll confirm the details on WhatsApp.
-                </p>
-              )}
 
               {confirming ? (
                 <div className="mt-5">
