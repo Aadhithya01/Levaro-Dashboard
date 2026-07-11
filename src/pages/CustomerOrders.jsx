@@ -11,6 +11,28 @@ const STATUS_META = {
   cancelled: { label: 'Cancelled', pill: 'bg-gray-100 text-gray-500 border-gray-300' },
 }
 
+const PAYMENT_META = {
+  upi: { label: 'UPI', pill: 'bg-indigo-50 text-indigo-700 border-indigo-300' },
+  cod: { label: 'COD', pill: 'bg-gray-100 text-gray-600 border-gray-300' },
+}
+
+function paymentLabel(o) {
+  const method = PAYMENT_META[o.payment_method] ?? PAYMENT_META.cod
+  const statusWord = o.payment_status === 'claimed' ? 'claimed' : 'unpaid'
+  return { ...method, statusWord }
+}
+
+// The proof path/URL is written by the anonymous storefront, so the stored
+// value is untrusted input. Never render it as a link directly — rebuild the
+// href against our own payment-proofs bucket from the path, and reject
+// anything that isn't a plain in-bucket object key (no scheme, no traversal).
+function proofHref(o) {
+  const path = o.payment_proof_path
+  if (!path || typeof path !== 'string') return null
+  if (/[:\\]/.test(path) || path.includes('..') || path.startsWith('/')) return null
+  return supabase.storage.from('payment-proofs').getPublicUrl(path).data.publicUrl
+}
+
 function formatWhen(iso) {
   if (!iso) return ''
   const d = new Date(iso)
@@ -139,7 +161,28 @@ export default function CustomerOrders() {
                       ))}
                     </ul>
                     <div className="flex items-center justify-between mt-3">
-                      <span className="text-sm font-semibold text-brand-green">Total: ₹{Number(o.total).toFixed(0)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-brand-green">Total: ₹{Number(o.total).toFixed(0)}</span>
+                        {(() => {
+                          const p = paymentLabel(o)
+                          return (
+                            <span className={`text-[11px] font-medium border rounded-full px-2 py-0.5 ${p.pill}`}>
+                              {p.label} · {p.statusWord}
+                            </span>
+                          )
+                        })()}
+                        {(() => {
+                          const href = proofHref(o)
+                          return href ? (
+                            <a
+                              href={href} target="_blank" rel="noopener noreferrer"
+                              className="text-[11px] text-brand-green hover:underline"
+                            >
+                              📎 Proof ↗
+                            </a>
+                          ) : null
+                        })()}
+                      </div>
                       {confirmingDelete === o.id ? (
                         <span className="text-xs">
                           <span className="text-gray-500 mr-2">Delete?</span>
