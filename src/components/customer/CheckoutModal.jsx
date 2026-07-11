@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import upiQr from '../../assets/upi-qr.png'
 
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER
+const UPI_ID = 'aadhithyaraja180-2@oksbi'
 
-function buildMessage({ name, phone, address, landmark, locationUrl, items, total }) {
+function buildMessage({ name, phone, address, landmark, locationUrl, items, total, paymentMethod, hasProof }) {
   const orderLines = items.map((i, idx) => {
     const codePart = i.code ? ` (${i.code})` : ''
     const colorPart = i.color ? ` — ${i.color}` : ''
@@ -17,6 +19,11 @@ function buildMessage({ name, phone, address, landmark, locationUrl, items, tota
   ]
   if (landmark) details.push(`Landmark: ${landmark}`)
   if (locationUrl) details.push(`Location: ${locationUrl}`)
+
+  const paymentLine = paymentMethod === 'upi'
+    ? `Payment: Paid via UPI${hasProof ? ' (screenshot uploaded)' : ''}`
+    : `Payment: Cash on Delivery`
+  details.push(paymentLine)
 
   return [
     `Hello LEVARO team,`,
@@ -35,6 +42,7 @@ function buildMessage({ name, phone, address, landmark, locationUrl, items, tota
 }
 
 export default function CheckoutModal({ items, total, onClose, onClear }) {
+  const [step, setStep] = useState('details') // 'details' | 'payment'
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
@@ -43,11 +51,15 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
   const [locating, setLocating] = useState(false)
   const [geoError, setGeoError] = useState('')
   const [phoneError, setPhoneError] = useState('')
+  const [method, setMethod] = useState('upi') // 'upi' | 'cod'
+
+  // Proof state is populated by Task 3 (screenshot upload). Kept here so
+  // handleSend can read it regardless of whether an upload happened.
+  const proof = null // Task 3 replaces this with state: { url, path } | null
 
   const numberMissing = !WHATSAPP_NUMBER
 
   const handlePhoneChange = (e) => {
-    // digits only, max 10
     const digits = e.target.value.replace(/\D/g, '').slice(0, 10)
     setPhone(digits)
     if (phoneError) setPhoneError('')
@@ -74,17 +86,22 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
     )
   }
 
-  const handleSubmit = (e) => {
+  // Details step submit → advance to payment step (no logging/WhatsApp yet).
+  const handleDetailsSubmit = (e) => {
     e.preventDefault()
     if (numberMissing) return
     if (phone.length !== 10) {
       setPhoneError('Please enter a valid 10-digit phone number.')
       return
     }
+    setStep('payment')
+  }
 
-    // Log the order to the admin app (best-effort). Fire-and-forget — we do NOT
-    // await before window.open, or a popup blocker may swallow the WhatsApp
-    // handoff. A logging failure must never stop the customer's order.
+  // Final handoff: log order (fire-and-forget) + open WhatsApp + clear cart.
+  const handleSend = () => {
+    if (numberMissing) return
+    const paymentStatus = method === 'upi' ? 'claimed' : 'unpaid'
+
     supabase
       .from('customer_orders')
       .insert({
@@ -103,6 +120,10 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
           price: i.price,
         })),
         total,
+        payment_method: method,
+        payment_status: paymentStatus,
+        payment_proof_url: proof?.url ?? null,
+        payment_proof_path: proof?.path ?? null,
       })
       .then(({ error }) => {
         if (error) console.error('Failed to log customer order:', error)
@@ -116,14 +137,16 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
       locationUrl,
       items,
       total,
+      paymentMethod: method,
+      hasProof: !!proof,
     })
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
     window.open(url, '_blank', 'noopener,noreferrer')
-    // Auto-clear the cart and close everything once the order is sent.
     onClear()
   }
 
   const inputStyle = { fontFamily: "'Raleway', sans-serif", fontSize: '0.9rem', color: '#1a5c45', fontWeight: 500 }
+  const labelStyle = { fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem', letterSpacing: '0.05em' }
 
   return (
     <div
@@ -139,107 +162,147 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
         <div className="px-5 pt-5 pb-6">
           <div className="w-8 h-px bg-brand-gold mb-3" />
 
-          <form onSubmit={handleSubmit}>
-            <p className="levaro-display text-gray-900" style={{ fontSize: '1.3rem', fontWeight: 400, letterSpacing: '0.02em' }}>
-              Your details
-            </p>
-            <p className="mt-1 text-gray-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem' }}>
-              We'll send your order of {items.length} {items.length === 1 ? 'item' : 'items'} (₹{total.toFixed(0)}) to our WhatsApp.
-            </p>
+          {step === 'details' ? (
+            <form onSubmit={handleDetailsSubmit}>
+              <p className="levaro-display text-gray-900" style={{ fontSize: '1.3rem', fontWeight: 400, letterSpacing: '0.02em' }}>
+                Your details
+              </p>
+              <p className="mt-1 text-gray-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem' }}>
+                {items.length} {items.length === 1 ? 'item' : 'items'} · ₹{total.toFixed(0)}. Next you'll choose how to pay.
+              </p>
 
-            <div className="mt-4 space-y-3">
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Full name"
-                className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green"
-                style={inputStyle}
-              />
-
-              <div>
+              <div className="mt-4 space-y-3">
                 <input
-                  type="tel"
-                  required
-                  inputMode="numeric"
-                  maxLength={10}
-                  value={phone}
-                  onChange={handlePhoneChange}
-                  placeholder="Phone number (10 digits)"
-                  className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${phoneError ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-brand-green'}`}
+                  type="text" required value={name} onChange={e => setName(e.target.value)}
+                  placeholder="Full name"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green"
                   style={inputStyle}
                 />
-                {phoneError && (
-                  <p className="mt-1 text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
-                    {phoneError}
+
+                <div>
+                  <input
+                    type="tel" required inputMode="numeric" maxLength={10} value={phone}
+                    onChange={handlePhoneChange} placeholder="Phone number (10 digits)"
+                    className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${phoneError ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-brand-green'}`}
+                    style={inputStyle}
+                  />
+                  {phoneError && (
+                    <p className="mt-1 text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
+                      {phoneError}
+                    </p>
+                  )}
+                </div>
+
+                <textarea
+                  required rows={3} value={address} onChange={e => setAddress(e.target.value)}
+                  placeholder="Delivery address"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green resize-none"
+                  style={inputStyle}
+                />
+
+                <input
+                  type="text" value={landmark} onChange={e => setLandmark(e.target.value)}
+                  placeholder="Nearby landmark (optional)"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green"
+                  style={inputStyle}
+                />
+
+                <button
+                  type="button" onClick={shareLocation} disabled={locating}
+                  className={`w-full rounded-xl py-2.5 border transition-colors font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60 ${locationUrl ? 'border-brand-green bg-brand-green/5 text-brand-green' : 'border-gray-300 text-gray-600 hover:border-brand-green hover:text-brand-green'}`}
+                  style={labelStyle}
+                >
+                  {locating ? 'Getting your location…' : locationUrl ? '📍 Location pinned ✓ (tap to update)' : '📍 Share my location (optional)'}
+                </button>
+                {geoError && (
+                  <p className="text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
+                    {geoError}
                   </p>
                 )}
               </div>
 
-              <textarea
-                required
-                rows={3}
-                value={address}
-                onChange={e => setAddress(e.target.value)}
-                placeholder="Delivery address"
-                className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green resize-none"
-                style={inputStyle}
-              />
-
-              <input
-                type="text"
-                value={landmark}
-                onChange={e => setLandmark(e.target.value)}
-                placeholder="Nearby landmark (optional)"
-                className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green"
-                style={inputStyle}
-              />
-
-              {/* Location pin */}
-              <button
-                type="button"
-                onClick={shareLocation}
-                disabled={locating}
-                className={`w-full rounded-xl py-2.5 border transition-colors font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60 ${locationUrl ? 'border-brand-green bg-brand-green/5 text-brand-green' : 'border-gray-300 text-gray-600 hover:border-brand-green hover:text-brand-green'}`}
-                style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem', letterSpacing: '0.05em' }}
-              >
-                {locating
-                  ? 'Getting your location…'
-                  : locationUrl
-                    ? '📍 Location pinned ✓ (tap to update)'
-                    : '📍 Share my location (optional)'}
-              </button>
-              {geoError && (
-                <p className="text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
-                  {geoError}
+              {numberMissing && (
+                <p className="mt-3 text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem' }}>
+                  Ordering is temporarily unavailable. Please try again later.
                 </p>
               )}
-            </div>
 
-            {numberMissing && (
-              <p className="mt-3 text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem' }}>
-                Ordering is temporarily unavailable. Please try again later.
+              <button
+                type="submit" disabled={numberMissing}
+                className="mt-5 w-full bg-brand-green text-brand-gold rounded-xl py-3 hover:opacity-90 transition-opacity font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem', letterSpacing: '0.12em' }}
+              >
+                CONTINUE TO PAYMENT
+              </button>
+              <button
+                type="button" onClick={onClose}
+                className="mt-2 w-full text-gray-400 hover:text-gray-600 transition-colors"
+                style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem', letterSpacing: '0.06em' }}
+              >
+                Back to cart
+              </button>
+            </form>
+          ) : (
+            <div>
+              <p className="levaro-display text-gray-900" style={{ fontSize: '1.3rem', fontWeight: 400, letterSpacing: '0.02em' }}>
+                Payment
               </p>
-            )}
+              <p className="mt-1 text-gray-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem' }}>
+                Total payable: ₹{total.toFixed(0)}
+              </p>
 
-            <button
-              type="submit"
-              disabled={numberMissing}
-              className="mt-5 w-full bg-brand-green text-brand-gold rounded-xl py-3 hover:opacity-90 transition-opacity font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem', letterSpacing: '0.12em' }}
-            >
-              SEND ORDER ON WHATSAPP
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="mt-2 w-full text-gray-400 hover:text-gray-600 transition-colors"
-              style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem', letterSpacing: '0.06em' }}
-            >
-              Back to cart
-            </button>
-          </form>
+              {/* Method selector */}
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {[{ key: 'upi', label: 'Pay via UPI' }, { key: 'cod', label: 'Cash on Delivery' }].map(m => (
+                  <button
+                    key={m.key} type="button" onClick={() => setMethod(m.key)}
+                    className={`rounded-xl py-2.5 border transition-colors font-semibold ${method === m.key ? 'border-brand-green bg-brand-green/5 text-brand-green' : 'border-gray-200 text-gray-600 hover:border-brand-green'}`}
+                    style={labelStyle}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* UPI panel */}
+              {method === 'upi' && (
+                <div className="mt-4 flex flex-col items-center text-center">
+                  <img src={upiQr} alt="UPI QR code" className="w-52 h-52 object-contain rounded-xl border border-gray-100" />
+                  <p className="mt-2 text-gray-900 font-semibold" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '1.05rem' }}>
+                    Pay ₹{total.toFixed(0)}
+                  </p>
+                  <p className="text-gray-500 select-all" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem' }}>
+                    UPI ID: {UPI_ID}
+                  </p>
+                  <p className="mt-1 text-gray-400" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
+                    Scan, enter the amount, and pay. If your app allows a screenshot you can attach it below; otherwise just share the receipt on WhatsApp.
+                  </p>
+                  {/* Task 3 inserts the screenshot-upload control here. */}
+                </div>
+              )}
+
+              {method === 'cod' && (
+                <p className="mt-4 text-gray-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem' }}>
+                  Pay in cash when your order is delivered. We'll confirm the details on WhatsApp.
+                </p>
+              )}
+
+              <button
+                type="button" onClick={handleSend} disabled={numberMissing}
+                className="mt-5 w-full bg-brand-green text-brand-gold rounded-xl py-3 hover:opacity-90 transition-opacity font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem', letterSpacing: '0.12em' }}
+              >
+                {method === 'upi' ? "I'VE PAID — SEND ORDER ON WHATSAPP" : 'PLACE ORDER ON WHATSAPP'}
+              </button>
+              <button
+                type="button" onClick={() => setStep('details')}
+                className="mt-2 w-full text-gray-400 hover:text-gray-600 transition-colors"
+                style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem', letterSpacing: '0.06em' }}
+              >
+                Back to details
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
