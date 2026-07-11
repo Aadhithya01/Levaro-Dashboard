@@ -29,7 +29,7 @@ export default function DeleteProductModal({ product, onClose, onDeleted }) {
   }
 
   if (deleted) return (
-    <div className="fixed top-4 right-4 z-50 bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3 flex items-center gap-3">
+    <div className="fixed top-4 right-4 z-50 bg-white/90 backdrop-blur-lg rounded-2xl shadow-[0_18px_40px_-16px_rgba(8,38,28,0.35)] border border-white/70 px-4 py-3 flex items-center gap-3 lv-page">
       <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
         <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -40,8 +40,8 @@ export default function DeleteProductModal({ product, onClose, onDeleted }) {
   )
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+    <div className="lv-overlay flex items-center justify-center z-50 p-4">
+      <div className="lv-modal p-6 w-full max-w-sm">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

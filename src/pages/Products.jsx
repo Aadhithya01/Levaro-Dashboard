@@ -85,7 +85,7 @@ export default function Products() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
+      <div className="lv-page max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
         <button onClick={() => navigate('/')} className="text-sm text-brand-green hover:underline mb-4 block">
           ← Back to Categories
         </button>
@@ -93,7 +93,7 @@ export default function Products() {
           <h1 className="text-xl font-bold text-brand-green">{category?.name ?? 'Products'}</h1>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-brand-green text-brand-gold px-4 py-2 rounded text-sm font-semibold hover:opacity-90"
+            className="lv-btn px-4 py-2 text-sm font-semibold"
           >
             + Add Product
           </button>
@@ -101,15 +101,15 @@ export default function Products() {
 
         {!loading && products.length > 0 && (
           <div className="flex gap-5 mb-6">
-            <div className="bg-white rounded-lg border border-brand-border px-4 py-2 text-sm">
+            <div className="lv-card px-4 py-2 text-sm">
               <span className="font-semibold text-brand-green">{products.length}</span>
               <span className="text-gray-400 ml-1">products</span>
             </div>
-            <div className="bg-white rounded-lg border border-brand-border px-4 py-2 text-sm">
+            <div className="lv-card px-4 py-2 text-sm">
               <span className="font-semibold text-brand-green">{totalStock}</span>
               <span className="text-gray-400 ml-1">in stock</span>
             </div>
-            <div className="bg-white rounded-lg border border-brand-border px-4 py-2 text-sm">
+            <div className="lv-card px-4 py-2 text-sm">
               <span className={`font-semibold ${totalProfit >= 0 ? 'text-brand-green' : 'text-red-500'}`}>
                 ₹{totalProfit.toFixed(0)}
               </span>
@@ -131,7 +131,7 @@ export default function Products() {
             <p className="text-gray-400 text-xs mb-5">Add your first product to start tracking inventory</p>
             <button
               onClick={() => setShowModal(true)}
-              className="bg-brand-green text-brand-gold px-4 py-2 rounded text-sm font-semibold hover:opacity-90"
+              className="lv-btn px-4 py-2 text-sm font-semibold"
             >
               + Add Product
             </button>
@@ -146,10 +146,10 @@ export default function Products() {
                 <div
                   key={product.id}
                   onClick={() => navigate(`/products/${product.id}`)}
-                  className="relative group aspect-square rounded-xl cursor-pointer ring-2 ring-transparent hover:ring-brand-green transition-all shadow-sm"
+                  className="lv-lift relative group aspect-square rounded-2xl cursor-pointer shadow-[0_10px_30px_-14px_rgba(26,92,69,0.25)]"
                 >
                   {/* Image layer — overflow-hidden scoped here so hover buttons above are never clipped */}
-                  <div className="absolute inset-0 rounded-xl overflow-hidden">
+                  <div className="absolute inset-0 rounded-2xl overflow-hidden">
                     {allMedia.length > 0 ? (
                       <MediaSlider items={allMedia} />
                     ) : (

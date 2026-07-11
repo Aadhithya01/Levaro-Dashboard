@@ -61,7 +61,7 @@ export default function CustomerOrders() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
+      <div className="lv-page max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
         <h1 className="text-xl font-bold text-brand-green mb-4">Customer Orders</h1>
 
         {/* Filter chips */}
@@ -98,7 +98,7 @@ export default function CustomerOrders() {
               const items = Array.isArray(o.items) ? o.items : []
               const meta = STATUS_META[o.status] ?? STATUS_META.new
               return (
-                <div key={o.id} className="bg-white rounded-lg border border-brand-border p-4">
+                <div key={o.id} className="lv-card p-4">
                   {/* Header */}
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0">

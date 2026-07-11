@@ -25,8 +25,29 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-green flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-sm">
+    <div
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{
+        background:
+          'radial-gradient(900px 600px at 80% -10%, rgba(232,201,106,0.16), transparent 60%),' +
+          'radial-gradient(800px 600px at 10% 110%, rgba(232,201,106,0.10), transparent 55%),' +
+          'linear-gradient(160deg, #14503c 0%, #0f4232 55%, #0a2e22 100%)',
+      }}
+    >
+      {/* Soft gold dot-grid, echoing the storefront canvas */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          opacity: 0.06,
+          backgroundImage: 'radial-gradient(circle, #e8c96a 1px, transparent 1px)',
+          backgroundSize: '22px 22px',
+        }}
+      />
+      <div
+        className="lv-modal p-8 w-full max-w-sm"
+        style={{ background: 'rgba(255,255,255,0.94)' }}
+      >
         <div className="flex flex-col items-center mb-5">
           <div className="relative w-36 h-36 flex items-center justify-center mb-3">
             {/* Outer dashed ring — revolves counter-clockwise */}
@@ -65,7 +86,7 @@ export default function Login() {
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
+              className="w-full lv-input text-sm"
             />
           </div>
           <div>
@@ -76,7 +97,7 @@ export default function Login() {
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full border border-brand-border rounded px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
+                className="w-full lv-input pr-10 text-sm"
               />
               <button
                 type="button"
@@ -106,7 +127,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand-green text-brand-gold rounded py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-50 tracking-wide"
+            className="w-full lv-btn py-2 text-sm font-semibold disabled:opacity-50 tracking-wide"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>

@@ -36,7 +36,7 @@ export default function Settings() {
       <Navbar />
       <div className="max-w-2xl mx-auto px-6 py-8">
         <h1 className="text-xl font-bold text-brand-green mb-6">Settings</h1>
-        <div className="bg-white rounded-lg border border-brand-border p-6">
+        <div className="lv-card p-6">
           <h2 className="font-semibold text-brand-green mb-1">Image Enhancement Prompt</h2>
           <p className="text-xs text-gray-400 mb-4">
             This prompt will be sent to AI every time you upload a product image (requires AI integration to be active).
@@ -49,14 +49,14 @@ export default function Settings() {
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
                 rows={4}
-                className="w-full border border-brand-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green resize-none"
+                className="w-full lv-input text-sm resize-none"
                 placeholder="e.g. professional jewellery product photo, clean white background..."
               />
               <div className="flex items-center gap-3 mt-3">
                 <button
                   type="submit"
                   disabled={saving || !prompt.trim()}
-                  className="px-4 py-2 text-sm bg-brand-green text-brand-gold rounded hover:opacity-90 disabled:opacity-50"
+                  className="px-4 py-2 text-sm lv-btn disabled:opacity-50"
                 >
                   {saving ? 'Saving...' : 'Save'}
                 </button>

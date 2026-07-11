@@ -64,7 +64,7 @@ export default function MobileNav() {
 
   return (
     <nav className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
-      <div className="flex items-center gap-1 bg-brand-green rounded-full px-2 py-2 shadow-lg shadow-brand-green/30">
+      <div className="lv-dock flex items-center gap-1 rounded-full px-2 py-2">
         {items.map(item => {
           const active = item.isActive(pathname)
           return (
@@ -73,8 +73,8 @@ export default function MobileNav() {
               to={item.to}
               aria-label={item.label}
               aria-current={active ? 'page' : undefined}
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${
-                active ? 'bg-brand-gold/20 text-brand-gold' : 'text-brand-gold/55 hover:text-brand-gold'
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
+                active ? 'bg-brand-gold/20 text-brand-gold shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_2px_8px_rgba(0,0,0,0.25)] scale-105' : 'text-brand-gold/55 hover:text-brand-gold'
               }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

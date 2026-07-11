@@ -21,53 +21,31 @@ export default function Navbar() {
   const avatarUrl = user?.user_metadata?.avatar_url
   const initials = user?.email?.[0]?.toUpperCase() ?? '?'
 
+  const links = [
+    { to: '/', label: 'Categories', active: catActive },
+    { to: '/dashboard', label: 'Dashboard', active: dashActive },
+    { to: '/ledger', label: 'Ledger', active: ledgerActive },
+    { to: '/tasks', label: 'Tasks', active: tasksActive },
+    { to: '/orders', label: 'Orders', active: ordersActive },
+    { to: '/customer-orders', label: 'Customer Orders', active: custOrdersActive },
+    { to: '/set-prices', label: 'Set Prices', active: pricesActive },
+  ]
+
   return (
-    <nav className="bg-brand-green px-4 md:px-6 py-3 flex items-center justify-between">
+    <nav className="lv-nav px-4 md:px-6 py-3 flex items-center justify-between">
       <div className="flex items-center gap-6">
-        <span className="font-bold text-brand-gold text-lg tracking-widest">LEVARO</span>
+        <span className="font-bold text-brand-gold text-lg tracking-widest" style={{ textShadow: '0 0 18px rgba(232,201,106,0.35)' }}>LEVARO</span>
         <div className="hidden md:flex items-center gap-6">
-          <Link
-            to="/"
-            className={`text-sm transition-colors ${catActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
-          >
-            Categories
-          </Link>
-          <Link
-            to="/dashboard"
-            className={`text-sm transition-colors ${dashActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
-          >
-            Dashboard
-          </Link>
-          <Link
-            to="/ledger"
-            className={`text-sm transition-colors ${ledgerActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
-          >
-            Ledger
-          </Link>
-          <Link
-            to="/tasks"
-            className={`text-sm transition-colors ${tasksActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
-          >
-            Tasks
-          </Link>
-          <Link
-            to="/orders"
-            className={`text-sm transition-colors ${ordersActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
-          >
-            Orders
-          </Link>
-          <Link
-            to="/customer-orders"
-            className={`text-sm transition-colors ${custOrdersActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
-          >
-            Customer Orders
-          </Link>
-          <Link
-            to="/set-prices"
-            className={`text-sm transition-colors ${pricesActive ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
-          >
-            Set Prices
-          </Link>
+          {links.map(link => (
+            <Link
+              key={link.to}
+              to={link.to}
+              aria-current={link.active ? 'page' : undefined}
+              className={`lv-nav-link text-sm ${link.active ? 'text-brand-gold font-medium' : 'text-brand-gold/70 hover:text-brand-gold'}`}
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
       </div>
       <div className="flex items-center gap-3">

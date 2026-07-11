@@ -97,3 +97,233 @@
     clip-path: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   LEVARO ADMIN DESIGN SYSTEM — "Atelier"
+   Glassmorphism (overlays, nav) · Claymorphism (buttons, cards)
+   Soft neumorphism (inputs, stat chips)
+   Purely presentational: classes only, no behavioural change.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  --lv-green: #1a5c45;
+  --lv-green-deep: #0f4232;
+  --lv-gold: #e8c96a;
+  --lv-ink: rgba(15, 66, 50, 1);
+  --lv-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Warm layered "aurora" canvas behind every admin page */
+body {
+  background-color: #f8f4e9;
+  background-image:
+    radial-gradient(1100px 560px at 88% -12%, rgba(232, 201, 106, 0.20), transparent 62%),
+    radial-gradient(900px 520px at -12% 18%, rgba(26, 92, 69, 0.10), transparent 58%),
+    radial-gradient(760px 520px at 55% 112%, rgba(232, 201, 106, 0.12), transparent 60%);
+  background-attachment: fixed;
+}
+
+::selection { background: rgba(232, 201, 106, 0.45); }
+
+/* Slim, brand-tinted scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(26, 92, 69, 0.28);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: rgba(26, 92, 69, 0.5); background-clip: padding-box; }
+
+/* Accessible keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid rgba(26, 92, 69, 0.55);
+  outline-offset: 2px;
+}
+
+/* ── Glass overlay (modal backdrop) ── */
+@keyframes lvVeil { from { opacity: 0; } to { opacity: 1; } }
+.lv-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 38, 28, 0.45);
+  backdrop-filter: blur(8px) saturate(1.15);
+  -webkit-backdrop-filter: blur(8px) saturate(1.15);
+  animation: lvVeil 0.28s ease both;
+}
+
+/* ── Glass modal card ── */
+@keyframes lvPop {
+  from { opacity: 0; transform: translateY(16px) scale(0.965); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.lv-modal {
+  position: relative;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(22px) saturate(1.3);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 22px;
+  box-shadow:
+    0 26px 70px -18px rgba(8, 38, 28, 0.45),
+    0 4px 16px rgba(8, 38, 28, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  animation: lvPop 0.32s var(--lv-ease) both;
+}
+.lv-modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 24px; right: 24px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(232, 201, 106, 0.85), transparent);
+  pointer-events: none;
+}
+
+/* ── Soft-neumorphic input / select / textarea ── */
+.lv-input {
+  background: linear-gradient(180deg, #fdfcf8, #f7f3e8);
+  border: 1px solid #e6ddc8;
+  border-radius: 12px;
+  padding: 0.55rem 0.8rem;
+  color: #253c33;
+  box-shadow:
+    inset 0 1.5px 4px rgba(26, 92, 69, 0.07),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.75);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.lv-input::placeholder { color: #b4ab95; }
+.lv-input:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: rgba(26, 92, 69, 0.55);
+  box-shadow:
+    0 0 0 3px rgba(26, 92, 69, 0.14),
+    inset 0 1px 3px rgba(26, 92, 69, 0.05);
+}
+.lv-input-danger:focus {
+  border-color: rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* ── Clay primary button ── */
+.lv-btn {
+  position: relative;
+  background: linear-gradient(160deg, #26775a 0%, #1a5c45 55%, #113e2f 100%);
+  color: var(--lv-gold);
+  border-radius: 12px;
+  box-shadow:
+    0 10px 22px -10px rgba(17, 62, 47, 0.55),
+    0 2px 5px rgba(17, 62, 47, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.18);
+  transition: transform 0.18s var(--lv-ease), box-shadow 0.18s var(--lv-ease), filter 0.18s ease;
+}
+.lv-btn:hover:not(:disabled) {
+  filter: brightness(1.07);
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 28px -10px rgba(17, 62, 47, 0.6),
+    0 3px 7px rgba(17, 62, 47, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.16);
+}
+.lv-btn:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.985);
+  box-shadow:
+    0 5px 14px -8px rgba(17, 62, 47, 0.5),
+    inset 0 2px 5px rgba(0, 0, 0, 0.25);
+}
+.lv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.lv-btn-pill { border-radius: 999px; }
+
+/* ── Clay surface card ── */
+.lv-card {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(232, 224, 208, 0.95);
+  border-radius: 16px;
+  box-shadow:
+    0 10px 30px -14px rgba(26, 92, 69, 0.18),
+    0 1.5px 4px rgba(26, 92, 69, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+/* Hover lift for interactive cards/tiles */
+.lv-lift {
+  transition: transform 0.25s var(--lv-ease), box-shadow 0.25s var(--lv-ease);
+  will-change: transform;
+}
+.lv-lift:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 22px 44px -16px rgba(26, 92, 69, 0.32),
+    0 4px 10px rgba(26, 92, 69, 0.08);
+}
+
+/* ── Neumorphic stat chip ── */
+.lv-chip {
+  background: linear-gradient(145deg, #fbf8f0, #efe8d6);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 14px;
+  box-shadow:
+    4px 4px 10px rgba(26, 92, 69, 0.09),
+    -4px -4px 10px rgba(255, 255, 255, 0.9);
+}
+
+/* ── Page content entrance ── */
+@keyframes lvPage {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lv-page { animation: lvPage 0.45s var(--lv-ease) both; }
+
+/* ── Glass navbar ── */
+.lv-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: linear-gradient(180deg, rgba(20, 72, 54, 0.94), rgba(17, 62, 47, 0.88));
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid rgba(232, 201, 106, 0.22);
+  box-shadow: 0 10px 30px -18px rgba(8, 38, 28, 0.55);
+}
+.lv-nav-link {
+  position: relative;
+  padding: 0.3rem 0.15rem;
+  transition: color 0.2s ease;
+}
+.lv-nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -2px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--lv-gold);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.25s var(--lv-ease);
+}
+.lv-nav-link:hover::after { transform: scaleX(0.55); }
+.lv-nav-link[aria-current='page']::after { transform: scaleX(1); }
+
+/* ── Glass mobile dock ── */
+.lv-dock {
+  background: rgba(17, 62, 47, 0.88);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid rgba(232, 201, 106, 0.22);
+  box-shadow:
+    0 18px 40px -12px rgba(8, 38, 28, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Respect reduced-motion for every Atelier effect */
+@media (prefers-reduced-motion: reduce) {
+  .lv-overlay, .lv-modal, .lv-page { animation: none !important; }
+  .lv-btn, .lv-lift, .lv-nav-link::after, .lv-input { transition: none !important; }
+  .lv-lift:hover, .lv-btn:hover:not(:disabled), .lv-btn:active:not(:disabled) { transform: none !important; }
+}

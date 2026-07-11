@@ -111,7 +111,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8 space-y-10">
+      <div className="lv-page max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8 space-y-10">
         <h1 className="text-xl font-bold text-brand-green">Dashboard</h1>
 
         {/* Sales Transactions — at top */}
@@ -140,7 +140,7 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => downloadCSV(filteredSales, activeMonth)}
-                className="flex items-center gap-1.5 text-xs bg-brand-green text-brand-gold px-3 py-1.5 rounded hover:opacity-90 transition-opacity"
+                className="flex items-center gap-1.5 text-xs lv-btn px-3 py-1.5 transition-opacity"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -154,7 +154,7 @@ export default function Dashboard() {
           ) : (
             <>
               {/* Desktop table */}
-              <div className="hidden md:block bg-white rounded-lg border border-brand-border overflow-hidden">
+              <div className="hidden md:block lv-card overflow-hidden">
                 <table className="w-full text-sm">
                   <thead className="bg-brand-green">
                     <tr>
@@ -190,7 +190,7 @@ export default function Dashboard() {
               {/* Mobile stacked cards */}
               <div className="md:hidden space-y-2.5">
                 {filteredSales.map((s, i) => (
-                  <div key={i} className="bg-white rounded-lg border border-brand-border p-3.5">
+                  <div key={i} className="lv-card p-3.5">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-semibold text-gray-800 text-sm">{s.productName}</p>
                       <span className={`shrink-0 inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${s.paymentReceived ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
@@ -217,7 +217,7 @@ export default function Dashboard() {
             { label: 'Total Profit', value: `₹${totalProfit.toFixed(2)}`, bg: totalProfit >= 0 ? 'bg-brand-green/5 border-brand-green/20' : 'bg-red-50 border-red-200', color: totalProfit >= 0 ? 'text-brand-green' : 'text-red-500' },
             { label: 'Items in Stock', value: totalStock, bg: 'bg-brand-green/5 border-brand-green/20', color: 'text-brand-green' },
           ].map(({ label, value, bg, color }) => (
-            <div key={label} className={`rounded-lg border ${bg} px-4 py-3`}>
+            <div key={label} className={`rounded-2xl border ${bg} px-4 py-3 backdrop-blur-sm shadow-[0_10px_26px_-14px_rgba(26,92,69,0.22)]`}>
               <p className="text-xs text-gray-400 font-medium mb-1">{label}</p>
               <p className={`text-xl font-bold ${color}`}>{value}</p>
             </div>
@@ -226,7 +226,7 @@ export default function Dashboard() {
 
         <div>
           <h2 className="text-xs font-semibold text-brand-green mb-3 uppercase tracking-widest">Stock Levels</h2>
-          <div className="bg-white rounded-lg border border-brand-border p-4">
+          <div className="lv-card p-4">
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={stockData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e8e0d0" />
@@ -241,7 +241,7 @@ export default function Dashboard() {
 
         <div>
           <h2 className="text-xs font-semibold text-brand-green mb-3 uppercase tracking-widest">Profit per Product (₹)</h2>
-          <div className="bg-white rounded-lg border border-brand-border p-4">
+          <div className="lv-card p-4">
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={profitData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e8e0d0" />
@@ -256,7 +256,7 @@ export default function Dashboard() {
 
         <div>
           <h2 className="text-xs font-semibold text-brand-green mb-3 uppercase tracking-widest">Sales Revenue Over Time (₹)</h2>
-          <div className="bg-white rounded-lg border border-brand-border p-4">
+          <div className="lv-card p-4">
             {salesOverTime.length === 0 ? (
               <p className="text-gray-400 text-sm py-8 text-center">No sales data yet.</p>
             ) : (

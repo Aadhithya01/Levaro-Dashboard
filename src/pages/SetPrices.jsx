@@ -62,7 +62,7 @@ export default function SetPrices() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
+      <div className="lv-page max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
         <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
           <div>
             <h1 className="text-xl font-bold text-brand-green">Set Product Prices</h1>
@@ -75,7 +75,7 @@ export default function SetPrices() {
               type="button"
               onClick={handleSave}
               disabled={saving || filledCount === 0}
-              className="px-5 py-2 bg-brand-green text-brand-gold text-sm font-semibold rounded hover:opacity-90 disabled:opacity-40"
+              className="px-5 py-2 lv-btn text-sm font-semibold disabled:opacity-40"
             >
               {saving ? 'Saving...' : `Save ${filledCount > 0 ? filledCount + ' ' : ''}Price${filledCount !== 1 ? 's' : ''}`}
             </button>
@@ -109,7 +109,7 @@ export default function SetPrices() {
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   {products.map(product => (
-                    <div key={product.id} className="bg-white rounded-xl border border-brand-border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div key={product.id} className="lv-card lv-lift overflow-hidden">
                       {/* Image */}
                       <div className="aspect-square bg-brand-green/5">
                         {product.image_url ? (

@@ -17,8 +17,8 @@ export default function DeleteOrderModal({ order, onClose, onDeleted }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+    <div className="lv-overlay flex items-center justify-center z-50 p-4">
+      <div className="lv-modal p-6 w-full max-w-sm">
         <h2 className="text-lg font-semibold mb-2 text-brand-green">Delete Order</h2>
         <p className="text-sm text-gray-600 mb-4">
           Delete the order from <span className="font-semibold">{order.vendor_name}</span>? This also removes the attached bill. This cannot be undone.

@@ -27,11 +27,11 @@ export default function Orders() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
+      <div className="lv-page max-w-5xl mx-auto px-4 md:px-6 py-8 pb-24 md:pb-8">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-brand-green">Orders</h1>
           <button onClick={() => setShowAdd(true)}
-            className="bg-brand-green text-brand-gold px-4 py-2 rounded text-sm font-semibold hover:opacity-90">
+            className="lv-btn px-4 py-2 text-sm font-semibold">
             + Log Order
           </button>
         </div>
@@ -43,12 +43,12 @@ export default function Orders() {
             <p className="text-gray-600 text-sm font-medium mb-1">No orders logged yet</p>
             <p className="text-gray-400 text-xs mb-5">Log your first vendor order to start tracking.</p>
             <button onClick={() => setShowAdd(true)}
-              className="bg-brand-green text-brand-gold px-4 py-2 rounded text-sm font-semibold hover:opacity-90">
+              className="lv-btn px-4 py-2 text-sm font-semibold">
               + Log Order
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-brand-border overflow-x-auto">
+          <div className="lv-card overflow-x-auto">
             <table className="w-full text-sm min-w-[640px]">
               <thead className="bg-brand-green">
                 <tr>

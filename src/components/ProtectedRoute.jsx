@@ -3,10 +3,10 @@ import { useAuth } from '../contexts/AuthContext'
 
 export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return <div className="flex items-center justify-center h-screen bg-brand-cream">Loading...</div>
+  if (loading) return <div className="flex items-center justify-center h-screen text-brand-green/60 text-sm tracking-widest uppercase">Loading...</div>
   if (!user) return <Navigate to="/login" replace />
   return (
-    <div className="relative min-h-screen bg-brand-cream">
+    <div className="relative min-h-screen">
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 select-none">
         <img
           src="/levaro-logo.png"
