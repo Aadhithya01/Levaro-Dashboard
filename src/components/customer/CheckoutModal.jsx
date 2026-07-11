@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import upiQr from '../../assets/upi-qr.png'
 
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER
 const UPI_ID = 'aadhithyaraja180-2@oksbi'
+const ALLOWED_PROOF_EXT = ['jpg', 'jpeg', 'png', 'webp', 'heic']
 
 function buildMessage({ name, phone, address, landmark, locationUrl, items, total, paymentMethod, hasProof }) {
   const orderLines = items.map((i, idx) => {
@@ -59,6 +60,10 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
   const [previewUrl, setPreviewUrl] = useState('')
   const fileRef = useRef(null)
 
+  // Revoke the preview object URL whenever it changes or the modal unmounts,
+  // so closing the modal with a screenshot attached doesn't leak the blob.
+  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl) }, [previewUrl])
+
   const handleProofFile = async (e) => {
     const file = e.target.files[0]
     e.target.value = ''
@@ -68,21 +73,30 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
     if (file.size > 5 * 1024 * 1024) { setUploadError('Image too large (max 5 MB).'); return }
 
     setUploading(true)
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+    const rawExt = (file.name.split('.').pop() || '').toLowerCase()
+    const ext = ALLOWED_PROOF_EXT.includes(rawExt) ? rawExt : 'jpg'
     const path = `${new Date().getFullYear()}/${crypto.randomUUID()}.${ext}`
-    const { error: upErr } = await supabase.storage.from('payment-proofs').upload(path, file)
-    if (upErr) { setUploadError(upErr.message); setUploading(false); return }
-    const { data } = supabase.storage.from('payment-proofs').getPublicUrl(path)
-    setProof({ url: data.publicUrl, path })
-    setPreviewUrl(URL.createObjectURL(file))
-    setUploading(false)
+    try {
+      const { error: upErr } = await supabase.storage.from('payment-proofs').upload(path, file)
+      if (upErr) { setUploadError(upErr.message); return }
+      const { data } = supabase.storage.from('payment-proofs').getPublicUrl(path)
+      setProof({ url: data.publicUrl, path })
+      setPreviewUrl(URL.createObjectURL(file))
+    } catch (err) {
+      setUploadError(err?.message || 'Upload failed. Please try again.')
+    } finally {
+      setUploading(false)
+    }
   }
 
-  const removeProof = async () => {
-    if (proof?.path) await supabase.storage.from('payment-proofs').remove([proof.path])
-    if (previewUrl) URL.revokeObjectURL(previewUrl)
+  // Anon (storefront) has INSERT-only access to payment-proofs and cannot
+  // delete objects, so we don't attempt a storage remove here — a screenshot
+  // removed before submitting is simply left unreferenced. Clear local state
+  // only; the previewUrl effect revokes the blob.
+  const removeProof = () => {
     setProof(null)
     setPreviewUrl('')
+    setUploadError('')
   }
 
   const numberMissing = !WHATSAPP_NUMBER
