@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import upiQr from '../../assets/upi-qr.png'
 
@@ -53,9 +53,37 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
   const [phoneError, setPhoneError] = useState('')
   const [method, setMethod] = useState('upi') // 'upi' | 'cod'
 
-  // Proof state is populated by Task 3 (screenshot upload). Kept here so
-  // handleSend can read it regardless of whether an upload happened.
-  const proof = null // Task 3 replaces this with state: { url, path } | null
+  const [proof, setProof] = useState(null)   // { url, path } | null
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const [previewUrl, setPreviewUrl] = useState('')
+  const fileRef = useRef(null)
+
+  const handleProofFile = async (e) => {
+    const file = e.target.files[0]
+    e.target.value = ''
+    if (!file) return
+    setUploadError('')
+    if (!file.type.startsWith('image/')) { setUploadError('Please choose an image.'); return }
+    if (file.size > 5 * 1024 * 1024) { setUploadError('Image too large (max 5 MB).'); return }
+
+    setUploading(true)
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+    const path = `${new Date().getFullYear()}/${crypto.randomUUID()}.${ext}`
+    const { error: upErr } = await supabase.storage.from('payment-proofs').upload(path, file)
+    if (upErr) { setUploadError(upErr.message); setUploading(false); return }
+    const { data } = supabase.storage.from('payment-proofs').getPublicUrl(path)
+    setProof({ url: data.publicUrl, path })
+    setPreviewUrl(URL.createObjectURL(file))
+    setUploading(false)
+  }
+
+  const removeProof = async () => {
+    if (proof?.path) await supabase.storage.from('payment-proofs').remove([proof.path])
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setProof(null)
+    setPreviewUrl('')
+  }
 
   const numberMissing = !WHATSAPP_NUMBER
 
@@ -277,7 +305,32 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                   <p className="mt-1 text-gray-400" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
                     Scan, enter the amount, and pay. If your app allows a screenshot you can attach it below; otherwise just share the receipt on WhatsApp.
                   </p>
-                  {/* Task 3 inserts the screenshot-upload control here. */}
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleProofFile} />
+                  {proof ? (
+                    <div className="mt-3 relative inline-flex items-center gap-2 border border-brand-green rounded-lg p-2">
+                      <img src={previewUrl} alt="Payment screenshot" className="w-14 h-14 object-cover rounded" />
+                      <span className="text-brand-green font-semibold" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem' }}>
+                        Screenshot attached ✓
+                      </span>
+                      <button
+                        type="button" onClick={removeProof}
+                        className="bg-black/60 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hover:bg-red-500"
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button" onClick={() => fileRef.current.click()} disabled={uploading}
+                      className="mt-3 w-full border-2 border-dashed border-gray-300 rounded-xl py-2.5 text-gray-500 hover:border-brand-green hover:text-brand-green transition-colors disabled:opacity-60"
+                      style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem', letterSpacing: '0.04em' }}
+                    >
+                      {uploading ? 'Uploading…' : '📎 Upload payment screenshot (optional)'}
+                    </button>
+                  )}
+                  {uploadError && (
+                    <p className="mt-1 text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
+                      {uploadError}
+                    </p>
+                  )}
                 </div>
               )}
 
