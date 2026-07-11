@@ -22,6 +22,17 @@ function paymentLabel(o) {
   return { ...method, statusWord }
 }
 
+// The proof path/URL is written by the anonymous storefront, so the stored
+// value is untrusted input. Never render it as a link directly — rebuild the
+// href against our own payment-proofs bucket from the path, and reject
+// anything that isn't a plain in-bucket object key (no scheme, no traversal).
+function proofHref(o) {
+  const path = o.payment_proof_path
+  if (!path || typeof path !== 'string') return null
+  if (/[:\\]/.test(path) || path.includes('..') || path.startsWith('/')) return null
+  return supabase.storage.from('payment-proofs').getPublicUrl(path).data.publicUrl
+}
+
 function formatWhen(iso) {
   if (!iso) return ''
   const d = new Date(iso)
@@ -160,14 +171,17 @@ export default function CustomerOrders() {
                             </span>
                           )
                         })()}
-                        {o.payment_proof_url && (
-                          <a
-                            href={o.payment_proof_url} target="_blank" rel="noopener noreferrer"
-                            className="text-[11px] text-brand-green hover:underline"
-                          >
-                            📎 Proof ↗
-                          </a>
-                        )}
+                        {(() => {
+                          const href = proofHref(o)
+                          return href ? (
+                            <a
+                              href={href} target="_blank" rel="noopener noreferrer"
+                              className="text-[11px] text-brand-green hover:underline"
+                            >
+                              📎 Proof ↗
+                            </a>
+                          ) : null
+                        })()}
                       </div>
                       {confirmingDelete === o.id ? (
                         <span className="text-xs">

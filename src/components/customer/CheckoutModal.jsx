@@ -59,6 +59,7 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
   const [uploadError, setUploadError] = useState('')
   const [previewUrl, setPreviewUrl] = useState('')
   const fileRef = useRef(null)
+  const sendingRef = useRef(false) // synchronous double-submit guard
 
   // Revoke the preview object URL whenever it changes or the modal unmounts,
   // so closing the modal with a screenshot attached doesn't leak the blob.
@@ -73,10 +74,10 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
     if (file.size > 5 * 1024 * 1024) { setUploadError('Image too large (max 5 MB).'); return }
 
     setUploading(true)
-    const rawExt = (file.name.split('.').pop() || '').toLowerCase()
-    const ext = ALLOWED_PROOF_EXT.includes(rawExt) ? rawExt : 'jpg'
-    const path = `${new Date().getFullYear()}/${crypto.randomUUID()}.${ext}`
     try {
+      const rawExt = (file.name.split('.').pop() || '').toLowerCase()
+      const ext = ALLOWED_PROOF_EXT.includes(rawExt) ? rawExt : 'jpg'
+      const path = `${new Date().getFullYear()}/${crypto.randomUUID()}.${ext}`
       const { error: upErr } = await supabase.storage.from('payment-proofs').upload(path, file)
       if (upErr) { setUploadError(upErr.message); return }
       const { data } = supabase.storage.from('payment-proofs').getPublicUrl(path)
@@ -142,7 +143,11 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
   // Final handoff: log order (fire-and-forget) + open WhatsApp + clear cart.
   const handleSend = () => {
     if (numberMissing) return
+    if (sendingRef.current) return // guard against a fast double-click → duplicate orders
+    sendingRef.current = true
     const paymentStatus = method === 'upi' ? 'claimed' : 'unpaid'
+    // Only a UPI order carries a payment proof — never attach one to COD.
+    const orderProof = method === 'upi' ? proof : null
 
     supabase
       .from('customer_orders')
@@ -164,8 +169,8 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
         total,
         payment_method: method,
         payment_status: paymentStatus,
-        payment_proof_url: proof?.url ?? null,
-        payment_proof_path: proof?.path ?? null,
+        payment_proof_url: orderProof?.url ?? null,
+        payment_proof_path: orderProof?.path ?? null,
       })
       .then(({ error }) => {
         if (error) console.error('Failed to log customer order:', error)
@@ -180,7 +185,7 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
       items,
       total,
       paymentMethod: method,
-      hasProof: !!proof,
+      hasProof: !!orderProof,
     })
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
     window.open(url, '_blank', 'noopener,noreferrer')
