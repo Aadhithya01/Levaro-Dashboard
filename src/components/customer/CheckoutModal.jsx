@@ -6,7 +6,7 @@ const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER
 const UPI_ID = 'aadhithyaraja180-2@oksbi'
 const ALLOWED_PROOF_EXT = ['jpg', 'jpeg', 'png', 'webp', 'heic']
 
-function buildMessage({ name, phone, address, landmark, locationUrl, items, total, hasProof }) {
+function buildMessage({ name, phone, address, landmark, locationUrl, items, subtotal, discount, couponCode, total, hasProof }) {
   const orderLines = items.map((i, idx) => {
     const codePart = i.code ? ` (${i.code})` : ''
     const colorPart = i.color ? ` — ${i.color}` : ''
@@ -23,6 +23,10 @@ function buildMessage({ name, phone, address, landmark, locationUrl, items, tota
 
   details.push(`Payment: Paid via UPI${hasProof ? ' (screenshot uploaded)' : ''}`)
 
+  const totals = discount > 0
+    ? [`Subtotal: ₹${subtotal.toFixed(0)}`, `Coupon ${couponCode}: -₹${discount.toFixed(0)}`, `Total: ₹${total.toFixed(0)}`]
+    : [`Total: ₹${total.toFixed(0)}`]
+
   return [
     `Hello LEVARO team,`,
     ``,
@@ -33,7 +37,7 @@ function buildMessage({ name, phone, address, landmark, locationUrl, items, tota
     `Order summary:`,
     ...orderLines,
     ``,
-    `Total: ₹${total.toFixed(0)}`,
+    ...totals,
     ``,
     `Please confirm availability and the delivery timeline. Thank you.`,
   ].join('\n')
@@ -50,6 +54,11 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
   const [geoError, setGeoError] = useState('')
   const [phoneError, setPhoneError] = useState('')
   const [confirming, setConfirming] = useState(false) // inline "place this order?" prompt
+
+  const [couponInput, setCouponInput] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState(null) // { code, discount } | null
+  const [couponMsg, setCouponMsg] = useState('')
+  const [couponChecking, setCouponChecking] = useState(false)
 
   const [proof, setProof] = useState(null)   // { url, path } | null
   const [uploading, setUploading] = useState(false)
@@ -98,11 +107,31 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
   }
 
   const numberMissing = !WHATSAPP_NUMBER
+  const discount = appliedCoupon?.discount ?? 0
+  const payable = Math.max(0, total - discount)
+
+  const applyCoupon = async () => {
+    const code = couponInput.trim()
+    if (!code) { setAppliedCoupon(null); setCouponMsg(''); return }
+    setCouponChecking(true)
+    setCouponMsg('')
+    const { data, error } = await supabase.rpc('validate_coupon', { p_code: code, p_total: total })
+    setCouponChecking(false)
+    if (error) { setCouponMsg('Could not check coupon. Please try again.'); return }
+    if (data?.valid) {
+      setAppliedCoupon({ code: data.code, discount: Number(data.discount) })
+      setCouponMsg('')
+    } else {
+      setAppliedCoupon(null)
+      setCouponMsg(data?.message || 'Invalid coupon')
+    }
+  }
+  const clearCoupon = () => { setAppliedCoupon(null); setCouponInput(''); setCouponMsg('') }
 
   // UPI deep link with the amount pre-filled — tapping it opens the customer's
   // UPI app (GPay/PhonePe/Paytm chooser) on the payment screen. Works reliably
   // on Android; the QR + UPI ID below stay as the fallback for iOS/desktop.
-  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent('LEVARO')}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent('LEVARO order')}`
+  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent('LEVARO')}&am=${payable.toFixed(2)}&cu=INR&tn=${encodeURIComponent('LEVARO order')}`
 
   const handlePhoneChange = (e) => {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 10)
@@ -165,7 +194,9 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
           qty: i.qty,
           price: i.price,
         })),
-        total,
+        total: payable,
+        discount,
+        coupon_code: appliedCoupon?.code ?? null,
         payment_method: 'upi',
         payment_status: 'claimed',
         payment_proof_url: proof?.url ?? null,
@@ -175,6 +206,11 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
         if (error) console.error('Failed to log customer order:', error)
       })
 
+    if (appliedCoupon) {
+      supabase.rpc('redeem_coupon', { p_code: appliedCoupon.code })
+        .then(({ error }) => { if (error) console.error('Failed to redeem coupon:', error) })
+    }
+
     const message = buildMessage({
       name: name.trim(),
       phone: phone.trim(),
@@ -182,7 +218,10 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
       landmark: landmark.trim(),
       locationUrl,
       items,
-      total,
+      subtotal: total,
+      discount,
+      couponCode: appliedCoupon?.code ?? null,
+      total: payable,
       hasProof: !!proof,
     })
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
@@ -213,7 +252,7 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                 Your details
               </p>
               <p className="mt-1 text-gray-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem' }}>
-                {items.length} {items.length === 1 ? 'item' : 'items'} · ₹{total.toFixed(0)}. Next you'll choose how to pay.
+                {items.length} {items.length === 1 ? 'item' : 'items'} · ₹{payable.toFixed(0)}. Next you'll choose how to pay.
               </p>
 
               <div className="mt-4 space-y-3">
@@ -264,6 +303,46 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                     {geoError}
                   </p>
                 )}
+
+                {/* Coupon */}
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between rounded-xl border border-brand-green bg-brand-green/5 px-3.5 py-2.5">
+                    <span className="text-brand-green font-semibold" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem' }}>
+                      🎉 {appliedCoupon.code} · −₹{discount.toFixed(0)} off
+                    </span>
+                    <button type="button" onClick={clearCoupon} className="text-gray-400 hover:text-red-500 text-xs font-medium">
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text" value={couponInput}
+                      onChange={e => { setCouponInput(e.target.value.toUpperCase()); if (couponMsg) setCouponMsg('') }}
+                      placeholder="Coupon code (optional)"
+                      className="flex-1 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green uppercase"
+                      style={inputStyle}
+                    />
+                    <button
+                      type="button" onClick={applyCoupon} disabled={couponChecking || !couponInput.trim()}
+                      className="px-4 rounded-xl border border-brand-green text-brand-green font-semibold hover:bg-brand-green/5 transition-colors disabled:opacity-40"
+                      style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem', letterSpacing: '0.05em' }}
+                    >
+                      {couponChecking ? '…' : 'Apply'}
+                    </button>
+                  </div>
+                )}
+                {couponMsg && (
+                  <p className="text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
+                    {couponMsg}
+                  </p>
+                )}
+                {appliedCoupon && (
+                  <div className="text-right" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem' }}>
+                    <span className="text-gray-400">Subtotal ₹{total.toFixed(0)} · </span>
+                    <span className="text-gray-900 font-semibold">Total ₹{payable.toFixed(0)}</span>
+                  </div>
+                )}
               </div>
 
               {numberMissing && (
@@ -293,21 +372,21 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                 Payment
               </p>
               <p className="mt-1 text-gray-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem' }}>
-                Total payable: ₹{total.toFixed(0)}
+                Total payable: ₹{payable.toFixed(0)}
               </p>
 
               {/* UPI payment */}
               <div className="mt-4 flex flex-col items-center text-center">
                   <img src={upiQr} alt="UPI QR code" className="w-44 h-44 object-contain rounded-xl border border-gray-100" />
                   <p className="mt-2 text-gray-900 font-semibold" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '1.05rem' }}>
-                    Pay ₹{total.toFixed(0)}
+                    Pay ₹{payable.toFixed(0)}
                   </p>
                   <a
                     href={upiPayUrl}
                     className="mt-2 w-full bg-brand-green text-brand-gold rounded-xl py-2.5 hover:opacity-90 transition-opacity font-semibold flex items-center justify-center gap-1.5"
                     style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.78rem', letterSpacing: '0.06em' }}
                   >
-                    Pay ₹{total.toFixed(0)} in your UPI app
+                    Pay ₹{payable.toFixed(0)} in your UPI app
                   </a>
                   <p className="mt-2 text-gray-500 select-all" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem' }}>
                     or scan the QR above · UPI ID: {UPI_ID}

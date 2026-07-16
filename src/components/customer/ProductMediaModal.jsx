@@ -2,6 +2,7 @@ import { useState } from 'react'
 import MediaSlider from '../MediaSlider'
 import ImageZoomModal from '../ImageZoomModal'
 import { useCart } from '../../contexts/CartContext'
+import PriceTag from './PriceTag'
 
 const ZoomIcon = () => (
   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -10,7 +11,7 @@ const ZoomIcon = () => (
   </svg>
 )
 
-export default function ProductMediaModal({ product, allMedia = [], soldOut, variants = [], onClose, onReview }) {
+export default function ProductMediaModal({ product, allMedia = [], soldOut, variants = [], dealPrice = null, onClose, onReview }) {
   const [zoomOpen, setZoomOpen] = useState(false)
   const [selectedVariant, setSelectedVariant] = useState(null)
   const { addItem } = useCart()
@@ -22,13 +23,16 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, var
     hasVariants ? (selectedVariant && selectedVariant.stock > 0) : !soldOut
   )
   const cartImage = selectedVariant?.image_url ?? allMedia[0]?.url ?? product.image_url ?? null
+  const cartPrice = dealPrice != null && product.selling_price != null && Number(dealPrice) < Number(product.selling_price)
+    ? Number(dealPrice)
+    : product.selling_price
 
   const handleAdd = () => {
     addItem({
       id: product.id,
       name: product.name,
       code: product.code,
-      price: product.selling_price,
+      price: cartPrice,
       image: cartImage,
       ...(selectedVariant && { color: selectedVariant.color_name, variantId: selectedVariant.id }),
     })
@@ -109,15 +113,9 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, var
               </p>
             )}
 
-            <p
-              className="mt-1.5 font-semibold"
-              style={{ fontFamily: "'Raleway', sans-serif", fontSize: '1.15rem', color: '#1a5c45' }}
-            >
-              {product.selling_price != null
-                ? `₹${Number(product.selling_price).toFixed(0)}`
-                : <span style={{ color: '#9ca3af', fontWeight: 400, fontSize: '0.9rem' }}>Price on request</span>
-              }
-            </p>
+            <div className="mt-1.5">
+              <PriceTag product={product} size="lg" dealPrice={dealPrice} />
+            </div>
 
             {hasVariants && (
               <div className="mt-3">

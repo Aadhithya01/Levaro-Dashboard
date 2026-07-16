@@ -17,6 +17,8 @@ export default function Navbar() {
   const ordersActive = pathname.startsWith('/orders')
   const custOrdersActive = pathname.startsWith('/customer-orders')
   const pricesActive = pathname.startsWith('/set-prices')
+  const dealsActive = pathname.startsWith('/deals')
+  const couponsActive = pathname.startsWith('/coupons')
 
   const avatarUrl = user?.user_metadata?.avatar_url
   const initials = user?.email?.[0]?.toUpperCase() ?? '?'
@@ -29,6 +31,8 @@ export default function Navbar() {
     { to: '/orders', label: 'Orders', active: ordersActive },
     { to: '/customer-orders', label: 'Customer Orders', active: custOrdersActive },
     { to: '/set-prices', label: 'Set Prices', active: pricesActive },
+    { to: '/deals', label: 'Deals', active: dealsActive },
+    { to: '/coupons', label: 'Coupons', active: couponsActive },
   ]
 
   return (

@@ -10,6 +10,8 @@ import FloatingSuggestionButton from '../components/customer/FloatingSuggestionB
 import ReviewModal from '../components/customer/ReviewModal'
 import MediaSlider from '../components/MediaSlider'
 import ProductMediaModal from '../components/customer/ProductMediaModal'
+import PriceTag from '../components/customer/PriceTag'
+import { fetchTodaysDeals } from '../lib/deals'
 import Marquee from '../components/customer/Marquee'
 import CursorAccent from '../components/customer/CursorAccent'
 
@@ -31,6 +33,7 @@ export default function CustomerCategory() {
   const [loading, setLoading] = useState(true)
   const [reviewingProduct, setReviewingProduct] = useState(null)
   const [viewingProduct, setViewingProduct] = useState(null)
+  const [deals, setDeals] = useState(new Map())
   const { addItem } = useCart()
 
   useEffect(() => {
@@ -52,6 +55,8 @@ export default function CustomerCategory() {
     }
     load()
   }, [categoryId])
+
+  useEffect(() => { fetchTodaysDeals().then(setDeals) }, [])
 
   return (
     <div className="min-h-screen levaro-shop levaro-canvas flex flex-col">
@@ -129,12 +134,16 @@ export default function CustomerCategory() {
               const hasVariants = variants.length > 0
               const canAdd = !soldOut && product.selling_price != null
               const cartImage = allMedia[0]?.url ?? product.image_url ?? null
+              const dealPrice = deals.get(product.id) ?? null
+              const cartPrice = dealPrice != null && product.selling_price != null && dealPrice < Number(product.selling_price)
+                ? dealPrice
+                : product.selling_price
 
               return (
                 <div
                   key={product.id}
                   data-hover
-                  onClick={() => setViewingProduct({ product, allMedia, soldOut, variants })}
+                  onClick={() => setViewingProduct({ product, allMedia, soldOut, variants, dealPrice })}
                   className="levaro-card-enter group bg-brand-cream rounded-sm overflow-hidden cursor-pointer transition-transform duration-500 hover:-translate-y-1.5"
                   style={{ animationDelay: `${i * 0.05}s`, boxShadow: '0 12px 40px rgba(0,0,0,0.25)' }}
                 >
@@ -176,11 +185,9 @@ export default function CustomerCategory() {
                       </p>
                     )}
                     <div className="mt-1 flex items-center justify-between gap-2">
-                      <p className="font-semibold truncate min-w-0" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.95rem', color: '#1a5c45' }}>
-                        {product.selling_price != null
-                          ? `₹${Number(product.selling_price).toFixed(0)}`
-                          : <span style={{ color: '#9ca3af', fontWeight: 400, fontSize: '0.8rem' }}>On request</span>}
-                      </p>
+                      <div className="min-w-0">
+                        <PriceTag product={product} size="sm" dealPrice={dealPrice} />
+                      </div>
                       <button
                         type="button"
                         onClick={e => { e.stopPropagation(); setReviewingProduct({ id: product.id, name: product.name }) }}
@@ -211,10 +218,10 @@ export default function CustomerCategory() {
                       onClick={e => {
                         e.stopPropagation()
                         if (hasVariants) {
-                          setViewingProduct({ product, allMedia, soldOut, variants })
+                          setViewingProduct({ product, allMedia, soldOut, variants, dealPrice })
                           return
                         }
-                        addItem({ id: product.id, name: product.name, code: product.code, price: product.selling_price, image: cartImage })
+                        addItem({ id: product.id, name: product.name, code: product.code, price: cartPrice, image: cartImage })
                       }}
                       className="mt-2.5 w-full rounded-md py-2 bg-brand-green text-brand-gold hover:opacity-90 transition-opacity font-semibold disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
                       style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.66rem', letterSpacing: '0.1em' }}
@@ -248,6 +255,7 @@ export default function CustomerCategory() {
           allMedia={viewingProduct.allMedia}
           soldOut={viewingProduct.soldOut}
           variants={viewingProduct.variants ?? []}
+          dealPrice={viewingProduct.dealPrice ?? null}
           onClose={() => setViewingProduct(null)}
           onReview={p => { setViewingProduct(null); setReviewingProduct({ id: p.id, name: p.name }) }}
         />

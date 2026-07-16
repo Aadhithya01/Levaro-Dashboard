@@ -15,17 +15,22 @@ No test suite exists in this project.
 
 ## Environment
 
-Requires a `.env` file with:
+**Two databases (dev vs live).** There are two Supabase projects so testing never mutates live customer data, wired via Vite's mode-based env files:
+- `npm run dev` → **development** mode → `.env.development.local` → **dev** DB (`levaro-tracker-dev`, ref `bgprvtqsrkrpwlfubrbu`).
+- `npm run build` / `npm run preview` → **production** mode → `.env.production.local` → **live** DB (`levaro-tracker`, ref `cergignhfwrkxgamzfwd`). The manual Netlify deploy (`deploy.ps1`) runs `npm run build`, so **deploys always hit live** automatically.
+
+Each `*.local` file holds only `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` for that environment (git-ignored via `*.local`). Shared, environment-agnostic config lives in `.env` (loaded in every mode):
 ```
-VITE_SUPABASE_URL=...
-VITE_SUPABASE_ANON_KEY=...
 # EmailJS — used by customer feedback/suggestion/review modals
 VITE_EMAILJS_SERVICE_ID=...
 VITE_EMAILJS_PUBLIC_KEY=...
 VITE_EMAILJS_TEMPLATE_FEEDBACK_ID=...
 VITE_EMAILJS_TEMPLATE_SUGGESTION_ID=...
 VITE_EMAILJS_TEMPLATE_REVIEW_ID=...
+# Business WhatsApp number for storefront checkout (digits only, e.g. 918778044508)
+VITE_WHATSAPP_NUMBER=...
 ```
+The dev DB is a structural clone of live (same tables/RLS/anon-hardening/storage buckets) with **no rows copied** — no customer PII. Schema changes must be applied to **both** projects. If you re-clone, the edge function `process-image` is not auto-deployed to dev (image enhancement falls back to the original upload there).
 
 ## Architecture
 
@@ -33,7 +38,7 @@ VITE_EMAILJS_TEMPLATE_REVIEW_ID=...
 
 **Entry**: `src/main.jsx` wraps the app in `BrowserRouter` → `AuthProvider` → `CartProvider` → `App`. `AuthProvider` (`src/contexts/AuthContext.jsx`) exposes `{ user, loading, login, logout }` via `useAuth()`. `CartProvider` (`src/contexts/CartContext.jsx`) exposes `useCart()` and backs the customer cart with `localStorage` (key `levaro_cart`).
 
-**Routing** (`src/App.jsx`): Protected (auth-gated, redirect to `/login`): `/` (Categories), `/categories/:categoryId` (Products), `/products/:id` (ProductDetail), `/dashboard`, `/ledger`, `/tasks`, `/orders` (vendor-order admin log), `/customer-orders` (storefront-order admin view), `/set-prices`, `/welcome`. Public customer storefront (no auth): `/shop` (CustomerShop) and `/shop/:categoryId` (CustomerCategory). Unknown paths redirect to `/`. (`src/pages/Settings.jsx` exists but is not routed — an orphan; don't assume it's reachable.)
+**Routing** (`src/App.jsx`): Protected (auth-gated, redirect to `/login`): `/` (Categories), `/categories/:categoryId` (Products), `/products/:id` (ProductDetail), `/dashboard`, `/ledger`, `/tasks`, `/orders` (vendor-order admin log), `/customer-orders` (storefront-order admin view), `/set-prices`, `/deals` (Deal-of-the-Day admin), `/coupons` (coupon admin), `/welcome`. Public customer storefront (no auth): `/shop` (CustomerShop) and `/shop/:categoryId` (CustomerCategory). Unknown paths redirect to `/`. (`src/pages/Settings.jsx` exists but is not routed — an orphan; don't assume it's reachable.)
 
 **Two surfaces, one app**: the authenticated side is the internal inventory/business tool; the `/shop` routes plus everything in `src/components/customer/` are the public storefront. The storefront uses the cart (`CartButton`/`CartDrawer`/`CheckoutModal` — checkout composes a WhatsApp order message *and* logs the order to `customer_orders` on send), `ReviewModal` (writes `product_reviews` and emails via EmailJS), and floating `FeedbackModal`/`SuggestionModal` (write to `site_feedback`/`product_suggestions` **and** email via EmailJS). `MobileNav` is the bottom-bar navigation for authenticated pages on small screens.
 
@@ -52,6 +57,8 @@ VITE_EMAILJS_TEMPLATE_REVIEW_ID=...
 - `tasks` — `id, title, due_date, assigned_to (member_id), status ('pending'|'done'), created_at`
 - `vendor_orders` — `id, vendor_name, phone, order_price, quantity, location, bill_url, bill_path, created_by, created_at` (standalone vendor order log; bills in the public `order-bills` bucket). `Orders.jsx` reads this despite the "customer" naming ambiguity.
 - `customer_orders` — `id, customer_name, phone, address, landmark, location_url, items (jsonb), total, status ('new'|'confirmed'|'delivered'|'cancelled'), payment_method ('upi'|'cod'), payment_status ('unpaid'|'claimed'), payment_proof_url, payment_proof_path, created_at` (storefront checkout orders; anon may INSERT only, never SELECT — it holds PII; admins view via `CustomerOrders.jsx`. UPI = customer paid via the static QR and claims payment, optionally with a screenshot; COD = cash on delivery)
+- `deal_products` — `id, product_id, deal_price, deal_date, created_at` (unique `(product_id, deal_date)`). "Deal of the Day": admin (`/deals`, `DealOfTheDay.jsx` + `AddDealModal`) sets per-day real low prices; storefront shows `WHERE deal_date = today` (helper `src/lib/deals.js`). Anon may SELECT (read-only via RLS); `deal_price` is a real price the customer pays. Distinct from the **cosmetic** fake-MRP discount in `src/lib/discount.js` + `PriceTag` (display-only, no DB). A real deal overrides the cosmetic markup in `PriceTag`.
+- `coupons` — `id, code, discount_type ('percent'|'fixed'), discount_value, min_order, max_uses, used_count, active, expiry_date` (unique on `upper(code)`). Checkout coupons, managed at `/coupons` (`CouponsAdmin.jsx` + `AddCouponModal`). Anon has **no** table access (REVOKEd) — coupons are used only through two `SECURITY DEFINER` RPCs: `validate_coupon(p_code, p_total)` → `{valid, discount, code, message, ...}` (checks active/expiry/usage/min-order, caps discount at total) and `redeem_coupon(p_code)` (best-effort `used_count++` on order placement), both EXECUTE-granted to anon so codes can't be enumerated. `CheckoutModal` applies the discount on the details step; the stored `customer_orders.total` becomes the post-discount payable and `customer_orders.coupon_code`/`discount` record what was used.
 - `site_feedback` — written by the public `FeedbackModal` (`name`, `message`)
 - `product_suggestions` — written by the public `SuggestionModal` (`name`, `description`, `photo_urls`)
 - `app_settings` — `key, value` (e.g. `image_enhancement_prompt` consumed by the edge function)

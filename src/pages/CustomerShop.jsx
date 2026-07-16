@@ -8,6 +8,9 @@ import FloatingFeedbackButton from '../components/customer/FloatingFeedbackButto
 import FloatingSuggestionButton from '../components/customer/FloatingSuggestionButton'
 import Marquee from '../components/customer/Marquee'
 import CursorAccent from '../components/customer/CursorAccent'
+import PriceTag from '../components/customer/PriceTag'
+import { useCart } from '../contexts/CartContext'
+import { todayISO } from '../lib/deals'
 import { tileSpan, tileIndexLabel } from '../lib/collectionGrid'
 
 // All usable image URLs for a category: product main images + product gallery
@@ -25,12 +28,62 @@ function categoryImagePool(cat) {
 
 const pickRandom = arr => (arr.length ? arr[Math.floor(Math.random() * arr.length)] : null)
 
+function dealImage(p) {
+  if (p.image_url) return p.image_url
+  const img = (p.product_images ?? []).find(m => m.media_url && (m.media_type === 'image' || !m.media_type))
+  return img?.media_url ?? null
+}
+
+function DealCard({ deal, onAdd }) {
+  const p = deal.product
+  const stock = (p.purchases ?? []).reduce((s, x) => s + x.quantity, 0) - (p.sales ?? []).reduce((s, x) => s + x.quantity_sold, 0)
+  const soldOut = stock <= 0
+  const img = dealImage(p)
+  const dp = Number(deal.deal_price)
+  return (
+    <div className="bg-brand-cream rounded-sm overflow-hidden" style={{ boxShadow: '0 12px 40px rgba(0,0,0,0.25)' }}>
+      <div className={`relative overflow-hidden ${soldOut ? 'opacity-60' : ''}`} style={{ aspectRatio: '1' }}>
+        {img ? (
+          <img src={img} alt={p.name} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #d9c9b0, #b89c7e)' }}>
+            <span className="levaro-display text-brand-green/30" style={{ fontSize: '3rem', fontWeight: 300 }}>{p.name.charAt(0).toUpperCase()}</span>
+          </div>
+        )}
+        <span className="absolute top-2.5 left-2.5 text-white font-bold uppercase rounded-full px-2.5 py-0.5" style={{ background: '#a9791a', fontSize: '0.55rem', letterSpacing: '0.14em' }}>
+          Deal
+        </span>
+        {soldOut && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+            <span className="bg-black/60 text-white uppercase px-4 py-1.5 rounded-full" style={{ fontSize: '0.6rem', letterSpacing: '0.3em' }}>Sold Out</span>
+          </div>
+        )}
+      </div>
+      <div className="px-3.5 pt-3 pb-4">
+        <h4 className="levaro-display text-gray-800 truncate leading-snug" style={{ fontSize: '1.15rem', fontWeight: 500 }}>{p.name}</h4>
+        <div className="mt-1"><PriceTag product={p} size="sm" dealPrice={dp} /></div>
+        <button
+          type="button"
+          disabled={soldOut}
+          onClick={() => onAdd({ id: p.id, name: p.name, code: p.code, price: dp, image: img })}
+          className="mt-2.5 w-full rounded-md py-2 bg-brand-green text-brand-gold hover:opacity-90 transition-opacity font-semibold disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+          style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.66rem', letterSpacing: '0.1em' }}
+        >
+          {soldOut ? 'SOLD OUT' : 'ADD TO CART'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function CustomerShop() {
   const [categories, setCategories] = useState([])
+  const [deals, setDeals] = useState([])
   const [loading, setLoading] = useState(true)
   const [scrolled, setScrolled] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
   const navigate = useNavigate()
+  const { addItem } = useCart()
   const gridRef = useRef(null)
   const footerRef = useRef(null)
 
@@ -40,6 +93,14 @@ export default function CustomerShop() {
       .select('id, name, image_url, is_hero, products(id, image_url, product_images(media_url, media_type))')
       .order('created_at', { ascending: true })
       .then(({ data }) => { setCategories(data ?? []); setLoading(false) })
+  }, [])
+
+  useEffect(() => {
+    supabase
+      .from('deal_products')
+      .select('id, deal_price, product:products(id, name, code, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_images(media_url, media_type, sort_order))')
+      .eq('deal_date', todayISO())
+      .then(({ data }) => setDeals((data ?? []).filter(d => d.product)))
   }, [])
 
   useEffect(() => {
@@ -201,6 +262,23 @@ export default function CustomerShop() {
       <div className="mt-4 md:mt-2 relative z-[3]">
         <Marquee />
       </div>
+
+      {/* ── Deal of the Day ─────────────────────── */}
+      {deals.length > 0 && (
+        <section className="max-w-[1200px] mx-auto px-5 md:px-8 pt-14 md:pt-20 relative z-[3]">
+          <div className="flex items-end justify-between gap-3 mb-6 md:mb-9">
+            <h2 className="levaro-display text-brand-cream" style={{ fontWeight: 300, lineHeight: 1, fontSize: 'clamp(2rem, 4.5vw, 3.4rem)' }}>
+              Deal of the <em className="text-brand-gold" style={{ fontStyle: 'italic' }}>Day</em>
+            </h2>
+            <span className="uppercase text-brand-gold/70 whitespace-nowrap" style={{ fontSize: '0.6rem', letterSpacing: '0.3em' }}>
+              Today only
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5">
+            {deals.map(d => <DealCard key={d.id} deal={d} onAdd={addItem} />)}
+          </div>
+        </section>
+      )}
 
       {/* ── Collections ─────────────────────────── */}
       <main ref={gridRef} className="max-w-[1200px] mx-auto px-5 md:px-8 pt-16 md:pt-28 pb-20">
