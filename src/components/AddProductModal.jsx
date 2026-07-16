@@ -8,6 +8,7 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
   const [quantity, setQuantity] = useState('')
   const [price, setPrice] = useState('')
   const [sellingPrice, setSellingPrice] = useState('')
+  const [description, setDescription] = useState('')
   const [mediaItems, setMediaItems] = useState([])
   const [hasColors, setHasColors] = useState(false)
   const [colors, setColors] = useState([]) // { id, name, qty, file, previewUrl }
@@ -109,6 +110,7 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
         category_id: categoryId,
         selling_price: sp,
         ...(code.trim() && { code: code.trim() }),
+        ...(description.trim() && { description: description.trim() }),
         ...(image_url && { image_url }),
       })
       .select()
@@ -281,6 +283,19 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
               onChange={e => setSellingPrice(e.target.value)}
               className="w-full lv-input text-sm"
               placeholder="e.g. 250"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description <span className="text-gray-400 font-normal">(optional, shown on the shop)</span>
+            </label>
+            <textarea
+              rows={3}
+              maxLength={2000}
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              className="w-full lv-input text-sm resize-none"
+              placeholder="e.g. Handcrafted 22k gold-plated earrings with a matte finish."
             />
           </div>
           <MediaUploadSection items={mediaItems} onChange={setMediaItems} />

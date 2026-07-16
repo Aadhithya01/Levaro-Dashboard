@@ -8,6 +8,7 @@ export default function DealOfTheDay() {
   const [date, setDate] = useState(todayISO())
   const [deals, setDeals] = useState([])
   const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
 
@@ -22,8 +23,10 @@ export default function DealOfTheDay() {
   }
 
   useEffect(() => {
-    supabase.from('products').select('id, name, code, selling_price').order('name')
+    supabase.from('products').select('id, name, code, selling_price, category_id').order('name')
       .then(({ data }) => setProducts(data ?? []))
+    supabase.from('categories').select('id, name').order('name')
+      .then(({ data }) => setCategories(data ?? []))
   }, [])
 
   useEffect(() => { fetchDeals(date) }, [date])
@@ -107,7 +110,9 @@ export default function DealOfTheDay() {
       {showModal && (
         <AddDealModal
           date={date}
-          products={products.filter(p => p.selling_price != null && !existingIds.includes(p.id))}
+          categories={categories}
+          products={products}
+          existingIds={existingIds}
           onClose={() => setShowModal(false)}
           onAdded={() => fetchDeals(date)}
         />

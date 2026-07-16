@@ -8,6 +8,7 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
   const [sellingPrice, setSellingPrice] = useState(
     product.selling_price != null ? String(product.selling_price) : ''
   )
+  const [description, setDescription] = useState(product.description ?? '')
   const [mediaItems, setMediaItems] = useState([])
   const [removedIds, setRemovedIds] = useState([])
   const [mainImageRemoved, setMainImageRemoved] = useState(false)
@@ -219,6 +220,7 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
         name: name.trim(),
         code: code.trim() || null,
         selling_price: parseFloat(sellingPrice) || null,
+        description: description.trim() || null,
         image_url: newImageUrl,
       })
       .eq('id', product.id)
@@ -345,6 +347,19 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
               onChange={e => setSellingPrice(e.target.value)}
               className="w-full lv-input text-sm"
               placeholder="e.g. 250"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description <span className="text-gray-400 font-normal">(shown on the shop)</span>
+            </label>
+            <textarea
+              rows={3}
+              maxLength={2000}
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              className="w-full lv-input text-sm resize-none"
+              placeholder="e.g. Handcrafted 22k gold-plated earrings with a matte finish."
             />
           </div>
           {mediaLoading ? (

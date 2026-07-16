@@ -43,7 +43,7 @@ export default function CustomerCategory() {
           supabase.from('categories').select('name').eq('id', categoryId).single(),
           supabase
             .from('products')
-            .select('id, name, code, image_url, selling_price, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order), product_variants(id, color_name, image_url, purchases(quantity), sales(quantity_sold))')
+            .select('id, name, code, image_url, selling_price, description, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order), product_variants(id, color_name, image_url, purchases(quantity), sales(quantity_sold))')
             .eq('category_id', categoryId)
             .order('created_at', { ascending: false }),
         ])

@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-export default function AddDealModal({ date, products, onClose, onAdded }) {
+export default function AddDealModal({ date, categories = [], products = [], existingIds = [], onClose, onAdded }) {
+  const [categoryId, setCategoryId] = useState('')
   const [productId, setProductId] = useState('')
   const [dealPrice, setDealPrice] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const catProducts = products.filter(
+    p => p.category_id === categoryId && p.selling_price != null && !existingIds.includes(p.id)
+  )
   const selected = products.find(p => p.id === productId)
   const sp = selected?.selling_price != null ? Number(selected.selling_price) : null
   const dp = dealPrice === '' ? null : Number(dealPrice)
@@ -43,34 +47,42 @@ export default function AddDealModal({ date, products, onClose, onAdded }) {
         <p className="text-xs text-gray-400 mb-4">For {date}</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+            <select
+              value={categoryId}
+              onChange={e => { setCategoryId(e.target.value); setProductId('') }}
+              className="w-full lv-input text-sm"
+            >
+              <option value="">Select a category…</option>
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Product</label>
             <select
               value={productId}
               onChange={e => setProductId(e.target.value)}
-              className="w-full lv-input text-sm"
+              disabled={!categoryId}
+              className="w-full lv-input text-sm disabled:opacity-50"
             >
-              <option value="">Select a product…</option>
-              {products.map(p => (
+              <option value="">{categoryId ? 'Select a product…' : 'Pick a category first'}</option>
+              {catProducts.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.name}{p.code ? ` (${p.code})` : ''} — ₹{Number(p.selling_price).toFixed(0)}
                 </option>
               ))}
             </select>
-            {products.length === 0 && (
+            {categoryId && catProducts.length === 0 && (
               <p className="text-amber-600 text-xs mt-1">
-                No eligible products — each needs a normal price and can't already be on deal for this date.
+                No eligible products here — each needs a price and can't already be on deal for this date.
               </p>
             )}
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Deal price (₹)</label>
             <input
-              type="number"
-              min="0"
-              step="1"
-              value={dealPrice}
-              onChange={e => setDealPrice(e.target.value)}
-              placeholder="e.g. 199"
+              type="number" min="0" step="1" value={dealPrice}
+              onChange={e => setDealPrice(e.target.value)} placeholder="e.g. 199"
               className="w-full lv-input text-sm"
             />
             {sp != null && (
@@ -85,11 +97,7 @@ export default function AddDealModal({ date, products, onClose, onAdded }) {
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 text-sm lv-btn font-semibold disabled:opacity-40"
-            >
+            <button type="submit" disabled={loading} className="px-4 py-2 text-sm lv-btn font-semibold disabled:opacity-40">
               {loading ? 'Adding…' : 'Add Deal'}
             </button>
           </div>

@@ -117,6 +117,15 @@ export default function ProductMediaModal({ product, allMedia = [], soldOut, var
               <PriceTag product={product} size="lg" dealPrice={dealPrice} />
             </div>
 
+            {product.description && (
+              <p
+                className="mt-3 text-gray-600 whitespace-pre-line"
+                style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.85rem', lineHeight: 1.6 }}
+              >
+                {product.description}
+              </p>
+            )}
+
             {hasVariants && (
               <div className="mt-3">
                 <p className="uppercase text-gray-500 mb-1.5" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.6rem', letterSpacing: '0.18em' }}>

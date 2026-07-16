@@ -15,6 +15,7 @@ import CustomerCategory from './pages/CustomerCategory'
 import SetPrices from './pages/SetPrices'
 import DealOfTheDay from './pages/DealOfTheDay'
 import CouponsAdmin from './pages/CouponsAdmin'
+import DescriptionsAdmin from './pages/DescriptionsAdmin'
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
       <Route path="/set-prices" element={<ProtectedRoute><SetPrices /></ProtectedRoute>} />
       <Route path="/deals" element={<ProtectedRoute><DealOfTheDay /></ProtectedRoute>} />
       <Route path="/coupons" element={<ProtectedRoute><CouponsAdmin /></ProtectedRoute>} />
+      <Route path="/descriptions" element={<ProtectedRoute><DescriptionsAdmin /></ProtectedRoute>} />
       <Route path="/shop" element={<CustomerShop />} />
       <Route path="/shop/:categoryId" element={<CustomerCategory />} />
       <Route path="*" element={<Navigate to="/" replace />} />

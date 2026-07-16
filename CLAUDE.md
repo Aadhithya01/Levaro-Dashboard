@@ -38,7 +38,7 @@ The dev DB is a structural clone of live (same tables/RLS/anon-hardening/storage
 
 **Entry**: `src/main.jsx` wraps the app in `BrowserRouter` → `AuthProvider` → `CartProvider` → `App`. `AuthProvider` (`src/contexts/AuthContext.jsx`) exposes `{ user, loading, login, logout }` via `useAuth()`. `CartProvider` (`src/contexts/CartContext.jsx`) exposes `useCart()` and backs the customer cart with `localStorage` (key `levaro_cart`).
 
-**Routing** (`src/App.jsx`): Protected (auth-gated, redirect to `/login`): `/` (Categories), `/categories/:categoryId` (Products), `/products/:id` (ProductDetail), `/dashboard`, `/ledger`, `/tasks`, `/orders` (vendor-order admin log), `/customer-orders` (storefront-order admin view), `/set-prices`, `/deals` (Deal-of-the-Day admin), `/coupons` (coupon admin), `/welcome`. Public customer storefront (no auth): `/shop` (CustomerShop) and `/shop/:categoryId` (CustomerCategory). Unknown paths redirect to `/`. (`src/pages/Settings.jsx` exists but is not routed — an orphan; don't assume it's reachable.)
+**Routing** (`src/App.jsx`): Protected (auth-gated, redirect to `/login`): `/` (Categories), `/categories/:categoryId` (Products), `/products/:id` (ProductDetail), `/dashboard`, `/ledger`, `/tasks`, `/orders` (vendor-order admin log), `/customer-orders` (storefront-order admin view), `/set-prices`, `/deals` (Deal-of-the-Day admin), `/coupons` (coupon admin), `/descriptions` (fill missing product descriptions), `/welcome`. Public customer storefront (no auth): `/shop` (CustomerShop) and `/shop/:categoryId` (CustomerCategory). Unknown paths redirect to `/`. (`src/pages/Settings.jsx` exists but is not routed — an orphan; don't assume it's reachable.)
 
 **Two surfaces, one app**: the authenticated side is the internal inventory/business tool; the `/shop` routes plus everything in `src/components/customer/` are the public storefront. The storefront uses the cart (`CartButton`/`CartDrawer`/`CheckoutModal` — checkout composes a WhatsApp order message *and* logs the order to `customer_orders` on send), `ReviewModal` (writes `product_reviews` and emails via EmailJS), and floating `FeedbackModal`/`SuggestionModal` (write to `site_feedback`/`product_suggestions` **and** email via EmailJS). `MobileNav` is the bottom-bar navigation for authenticated pages on small screens.
 
@@ -48,7 +48,7 @@ The dev DB is a structural clone of live (same tables/RLS/anon-hardening/storage
 
 **Supabase schema** (relevant tables):
 - `categories` — `id, name, code, image_url, is_hero` (one hero category drives the Welcome/landing visual)
-- `products` — `id, name, image_url, selling_price, category_id`
+- `products` — `id, name, image_url, selling_price, category_id, description` (`description` shown in the storefront product popup only; edited via `/descriptions` for missing ones or the Edit Product modal)
 - `product_images` — `id, product_id, media_url, media_type, sort_order` (multi-image/video gallery per product)
 - `product_variants` — `id, product_id, color_name, image_url, image_path, created_at` (per-colour options; photos in the `product-images` bucket)
 - `product_reviews` — `id, product_id, ... , created_at` (written by the public `ReviewModal`)
