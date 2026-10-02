@@ -7,6 +7,7 @@ import EditProductModal from '../components/EditProductModal'
 import DeleteProductModal from '../components/DeleteProductModal'
 import AddPurchaseModal from '../components/AddPurchaseModal'
 import MediaSlider from '../components/MediaSlider'
+import { CHAIN_TYPES, CHAIN_COLOURS, PENDANT_STYLES, isChainCategory, matchesChainFilters } from '../lib/chainFilters'
 
 function buildMedia(product) {
   const items = []
@@ -56,6 +57,9 @@ export default function Products() {
   const [editingProduct, setEditingProduct] = useState(null)
   const [deletingProduct, setDeletingProduct] = useState(null)
   const [stockingProduct, setStockingProduct] = useState(null)
+  const [typeFilter, setTypeFilter] = useState([])
+  const [colourFilter, setColourFilter] = useState([])
+  const [pendantFilter, setPendantFilter] = useState([])
 
   async function fetchData() {
     const [{ data: cat }, { data: prods, error }] = await Promise.all([
@@ -73,6 +77,16 @@ export default function Products() {
   }
 
   useEffect(() => { fetchData() }, [categoryId]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setTypeFilter([]); setColourFilter([]); setPendantFilter([]) }, [categoryId])
+
+  const showChainFilters = isChainCategory(category?.name)
+  const visibleProducts = showChainFilters
+    ? products.filter(p => matchesChainFilters(p, typeFilter, colourFilter, pendantFilter))
+    : products
+
+  function toggleFilter(list, setList, value) {
+    setList(list.includes(value) ? list.filter(v => v !== value) : [...list, value])
+  }
 
   const { totalStock, totalProfit } = products.reduce(
     (acc, p) => {
@@ -118,6 +132,71 @@ export default function Products() {
           </div>
         )}
 
+        {!loading && showChainFilters && products.length > 0 && (
+          <div className="flex flex-wrap items-center gap-4 mb-5 lv-card px-4 py-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-semibold text-gray-500 mr-1">Type:</span>
+              {CHAIN_TYPES.map(t => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => toggleFilter(typeFilter, setTypeFilter, t.value)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    typeFilter.includes(t.value)
+                      ? 'bg-brand-green text-brand-gold border-brand-green'
+                      : 'border-brand-border text-gray-600 hover:border-brand-green'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-semibold text-gray-500 mr-1">Colour:</span>
+              {CHAIN_COLOURS.map(c => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => toggleFilter(colourFilter, setColourFilter, c.value)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    colourFilter.includes(c.value)
+                      ? 'bg-brand-green text-brand-gold border-brand-green'
+                      : 'border-brand-border text-gray-600 hover:border-brand-green'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-semibold text-gray-500 mr-1">Pendant:</span>
+              {PENDANT_STYLES.map(p => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => toggleFilter(pendantFilter, setPendantFilter, p.value)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    pendantFilter.includes(p.value)
+                      ? 'bg-brand-green text-brand-gold border-brand-green'
+                      : 'border-brand-border text-gray-600 hover:border-brand-green'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            {(typeFilter.length > 0 || colourFilter.length > 0 || pendantFilter.length > 0) && (
+              <button
+                type="button"
+                onClick={() => { setTypeFilter([]); setColourFilter([]); setPendantFilter([]) }}
+                className="text-xs text-gray-400 hover:text-gray-600 hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        )}
+
         {loading ? (
           <p className="text-gray-500 text-sm">Loading...</p>
         ) : products.length === 0 ? (
@@ -136,9 +215,11 @@ export default function Products() {
               + Add Product
             </button>
           </div>
+        ) : visibleProducts.length === 0 ? (
+          <p className="text-gray-400 text-sm text-center py-16">No chains match these filters.</p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {products.map(product => {
+            {visibleProducts.map(product => {
               const { stock, profit } = computeSummary(product)
               const reviewCount = product.product_reviews?.[0]?.count ?? 0
               const allMedia = buildMedia(product)
@@ -210,6 +291,7 @@ export default function Products() {
       {showModal && (
         <AddProductModal
           categoryId={categoryId}
+          categoryName={category?.name}
           onClose={() => setShowModal(false)}
           onAdded={fetchData}
         />
@@ -217,6 +299,7 @@ export default function Products() {
       {editingProduct && (
         <EditProductModal
           product={editingProduct}
+          categoryName={category?.name}
           onClose={() => setEditingProduct(null)}
           onUpdated={fetchData}
         />

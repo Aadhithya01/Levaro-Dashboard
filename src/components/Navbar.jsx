@@ -17,6 +17,7 @@ export default function Navbar() {
   const ordersActive = pathname.startsWith('/orders')
   const custOrdersActive = pathname.startsWith('/customer-orders')
   const pricesActive = pathname.startsWith('/set-prices')
+  const filtersActive = pathname.startsWith('/set-filters')
   const dealsActive = pathname.startsWith('/deals')
   const couponsActive = pathname.startsWith('/coupons')
   const descActive = pathname.startsWith('/descriptions')
@@ -32,6 +33,7 @@ export default function Navbar() {
     { to: '/orders', label: 'Orders', active: ordersActive },
     { to: '/customer-orders', label: 'Customer Orders', active: custOrdersActive },
     { to: '/set-prices', label: 'Set Prices', active: pricesActive },
+    { to: '/set-filters', label: 'Set Filter', active: filtersActive },
     { to: '/deals', label: 'Deals', active: dealsActive },
     { to: '/coupons', label: 'Coupons', active: couponsActive },
     { to: '/descriptions', label: 'Descriptions', active: descActive },

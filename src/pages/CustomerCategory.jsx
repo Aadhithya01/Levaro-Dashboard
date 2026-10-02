@@ -14,6 +14,7 @@ import PriceTag from '../components/customer/PriceTag'
 import { fetchTodaysDeals } from '../lib/deals'
 import Marquee from '../components/customer/Marquee'
 import CursorAccent from '../components/customer/CursorAccent'
+import { CHAIN_TYPES, CHAIN_COLOURS, PENDANT_STYLES, isChainCategory, matchesChainFilters } from '../lib/chainFilters'
 
 function buildMedia(product) {
   const items = []
@@ -34,6 +35,9 @@ export default function CustomerCategory() {
   const [reviewingProduct, setReviewingProduct] = useState(null)
   const [viewingProduct, setViewingProduct] = useState(null)
   const [deals, setDeals] = useState(new Map())
+  const [typeFilter, setTypeFilter] = useState([])
+  const [colourFilter, setColourFilter] = useState([])
+  const [pendantFilter, setPendantFilter] = useState([])
   const { addItem } = useCart()
 
   useEffect(() => {
@@ -43,7 +47,7 @@ export default function CustomerCategory() {
           supabase.from('categories').select('name').eq('id', categoryId).single(),
           supabase
             .from('products')
-            .select('id, name, code, image_url, selling_price, description, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order), product_variants(id, color_name, image_url, purchases(quantity), sales(quantity_sold))')
+            .select('id, name, code, image_url, selling_price, description, chain_type, chain_colour, pendant_style, purchases(quantity), sales(quantity_sold), product_reviews(rating), product_images(media_url, media_type, sort_order), product_variants(id, color_name, image_url, purchases(quantity), sales(quantity_sold))')
             .eq('category_id', categoryId)
             .order('created_at', { ascending: false }),
         ])
@@ -57,6 +61,16 @@ export default function CustomerCategory() {
   }, [categoryId])
 
   useEffect(() => { fetchTodaysDeals().then(setDeals) }, [])
+  useEffect(() => { setTypeFilter([]); setColourFilter([]); setPendantFilter([]) }, [categoryId])
+
+  const showChainFilters = isChainCategory(category?.name)
+  const visibleProducts = showChainFilters
+    ? products.filter(p => matchesChainFilters(p, typeFilter, colourFilter, pendantFilter))
+    : products
+
+  function toggleFilter(list, setList, value) {
+    setList(list.includes(value) ? list.filter(v => v !== value) : [...list, value])
+  }
 
   return (
     <div className="min-h-screen levaro-shop levaro-canvas flex flex-col">
@@ -99,10 +113,83 @@ export default function CustomerCategory() {
           </div>
           {!loading && products.length > 0 && (
             <p className="levaro-display text-brand-cream/45" style={{ fontSize: '0.8rem', fontStyle: 'italic' }}>
-              {products.length} {products.length === 1 ? 'piece' : 'pieces'}
+              {visibleProducts.length} {visibleProducts.length === 1 ? 'piece' : 'pieces'}
             </p>
           )}
         </div>
+
+        {!loading && showChainFilters && products.length > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mb-10 md:mb-12">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <span className="text-brand-gold/50 uppercase mr-1" style={{ fontSize: '0.62rem', letterSpacing: '0.2em' }}>Type</span>
+              {CHAIN_TYPES.map(t => (
+                <button
+                  key={t.value}
+                  type="button"
+                  data-hover
+                  onClick={() => toggleFilter(typeFilter, setTypeFilter, t.value)}
+                  className={`uppercase rounded-full px-3 py-1.5 border transition-colors ${
+                    typeFilter.includes(t.value)
+                      ? 'bg-brand-gold text-brand-green border-brand-gold font-semibold'
+                      : 'border-brand-gold/30 text-brand-cream/70 hover:border-brand-gold/70'
+                  }`}
+                  style={{ fontSize: '0.62rem', letterSpacing: '0.12em' }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <span className="text-brand-gold/50 uppercase mr-1" style={{ fontSize: '0.62rem', letterSpacing: '0.2em' }}>Colour</span>
+              {CHAIN_COLOURS.map(c => (
+                <button
+                  key={c.value}
+                  type="button"
+                  data-hover
+                  onClick={() => toggleFilter(colourFilter, setColourFilter, c.value)}
+                  className={`uppercase rounded-full px-3 py-1.5 border transition-colors ${
+                    colourFilter.includes(c.value)
+                      ? 'bg-brand-gold text-brand-green border-brand-gold font-semibold'
+                      : 'border-brand-gold/30 text-brand-cream/70 hover:border-brand-gold/70'
+                  }`}
+                  style={{ fontSize: '0.62rem', letterSpacing: '0.12em' }}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <span className="text-brand-gold/50 uppercase mr-1" style={{ fontSize: '0.62rem', letterSpacing: '0.2em' }}>Pendant</span>
+              {PENDANT_STYLES.map(p => (
+                <button
+                  key={p.value}
+                  type="button"
+                  data-hover
+                  onClick={() => toggleFilter(pendantFilter, setPendantFilter, p.value)}
+                  className={`uppercase rounded-full px-3 py-1.5 border transition-colors ${
+                    pendantFilter.includes(p.value)
+                      ? 'bg-brand-gold text-brand-green border-brand-gold font-semibold'
+                      : 'border-brand-gold/30 text-brand-cream/70 hover:border-brand-gold/70'
+                  }`}
+                  style={{ fontSize: '0.62rem', letterSpacing: '0.12em' }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            {(typeFilter.length > 0 || colourFilter.length > 0 || pendantFilter.length > 0) && (
+              <button
+                type="button"
+                data-hover
+                onClick={() => { setTypeFilter([]); setColourFilter([]); setPendantFilter([]) }}
+                className="text-brand-cream/40 hover:text-brand-cream/70 uppercase underline"
+                style={{ fontSize: '0.6rem', letterSpacing: '0.1em' }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
 
         {loading ? (
           <div className="flex justify-center py-24">
@@ -112,9 +199,13 @@ export default function CustomerCategory() {
           <p className="levaro-display text-brand-cream/40 text-center py-24" style={{ fontStyle: 'italic', fontSize: '1.1rem' }}>
             No pieces in this collection yet.
           </p>
+        ) : visibleProducts.length === 0 ? (
+          <p className="levaro-display text-brand-cream/40 text-center py-24" style={{ fontStyle: 'italic', fontSize: '1.1rem' }}>
+            No pieces match these filters.
+          </p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {products.map((product, i) => {
+            {visibleProducts.map((product, i) => {
               const totalQty = (product.purchases ?? []).reduce((sum, p) => sum + p.quantity, 0)
               const soldQty = (product.sales ?? []).reduce((sum, s) => sum + s.quantity_sold, 0)
               const stockLeft = totalQty - soldQty

@@ -314,3 +314,38 @@ CREATE POLICY "auth manage payment proofs"
   ON storage.objects FOR ALL TO authenticated
   USING (bucket_id = 'payment-proofs')
   WITH CHECK (bucket_id = 'payment-proofs');
+
+-- Migration: chain_filters (2026-10-02)
+-- Optional type/colour tags on chain products (Chains, ANTI-TARNISH CHAINS
+-- categories) powering filter UI on the admin product grid, the "Set Filter"
+-- catch-up page, and the customer shop. NULL = untagged; no anon grant
+-- changes needed since "Public read products" already exposes all columns.
+ALTER TABLE products
+  ADD COLUMN chain_type text CHECK (chain_type IN ('single','double','triple')),
+  ADD COLUMN chain_colour text CHECK (chain_colour IN ('gold','silver'));
+
+-- Migration: chain_pendant_filter (2026-10-02)
+-- Third chain filter dimension: whether the pendant has a stone or is plain.
+ALTER TABLE products
+  ADD COLUMN pendant_style text CHECK (pendant_style IN ('stone','plain'));
+
+-- Migration: pay_in_hand (2026-10-02)
+-- Third checkout payment option for in-person/stall sales: only the
+-- customer's name is collected, no delivery details, no payment proof —
+-- marked paid immediately. phone/address become optional since they're
+-- meaningless for a walk-up sale; UPI orders still require both at the
+-- app level. UPI screenshot proof also becomes mandatory going forward
+-- (app-level check; unchanged at the DB level).
+ALTER TABLE customer_orders
+  ALTER COLUMN phone DROP NOT NULL,
+  ALTER COLUMN address DROP NOT NULL;
+
+ALTER TABLE customer_orders
+  DROP CONSTRAINT customer_orders_payment_method_chk,
+  DROP CONSTRAINT customer_orders_payment_status_chk;
+
+ALTER TABLE customer_orders
+  ADD CONSTRAINT customer_orders_payment_method_chk
+    CHECK (payment_method IN ('upi','cod','cash')),
+  ADD CONSTRAINT customer_orders_payment_status_chk
+    CHECK (payment_status IN ('unpaid','claimed','paid'));

@@ -1,16 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import MediaUploadSection from './MediaUploadSection'
+import { CHAIN_TYPES, CHAIN_COLOURS, PENDANT_STYLES, isChainCategory } from '../lib/chainFilters'
 
-export default function AddProductModal({ categoryId, onClose, onAdded }) {
+export default function AddProductModal({ categoryId, categoryName, onClose, onAdded }) {
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
   const [quantity, setQuantity] = useState('')
   const [price, setPrice] = useState('')
   const [sellingPrice, setSellingPrice] = useState('')
   const [description, setDescription] = useState('')
+  const [chainType, setChainType] = useState('')
+  const [chainColour, setChainColour] = useState('')
+  const [pendantStyle, setPendantStyle] = useState('')
   const [mediaItems, setMediaItems] = useState([])
   const [hasColors, setHasColors] = useState(false)
+  const showChainFields = isChainCategory(categoryName)
   const [colors, setColors] = useState([]) // { id, name, qty, file, previewUrl }
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -112,6 +117,9 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
         ...(code.trim() && { code: code.trim() }),
         ...(description.trim() && { description: description.trim() }),
         ...(image_url && { image_url }),
+        ...(showChainFields && chainType && { chain_type: chainType }),
+        ...(showChainFields && chainColour && { chain_colour: chainColour }),
+        ...(showChainFields && pendantStyle && { pendant_style: pendantStyle }),
       })
       .select()
       .single()
@@ -298,6 +306,51 @@ export default function AddProductModal({ categoryId, onClose, onAdded }) {
               placeholder="e.g. Handcrafted 22k gold-plated earrings with a matte finish."
             />
           </div>
+          {showChainFields && (
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Chain Type <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <select
+                  value={chainType}
+                  onChange={e => setChainType(e.target.value)}
+                  className="w-full lv-input text-sm"
+                >
+                  <option value="">—</option>
+                  {CHAIN_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Chain Colour <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <select
+                  value={chainColour}
+                  onChange={e => setChainColour(e.target.value)}
+                  className="w-full lv-input text-sm"
+                >
+                  <option value="">—</option>
+                  {CHAIN_COLOURS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+          {showChainFields && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Pendant <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <select
+                value={pendantStyle}
+                onChange={e => setPendantStyle(e.target.value)}
+                className="w-full lv-input text-sm"
+              >
+                <option value="">—</option>
+                {PENDANT_STYLES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </div>
+          )}
           <MediaUploadSection items={mediaItems} onChange={setMediaItems} />
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex gap-2 justify-end">

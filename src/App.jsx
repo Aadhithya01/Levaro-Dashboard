@@ -13,6 +13,7 @@ import Welcome from './pages/Welcome'
 import CustomerShop from './pages/CustomerShop'
 import CustomerCategory from './pages/CustomerCategory'
 import SetPrices from './pages/SetPrices'
+import SetFilters from './pages/SetFilters'
 import DealOfTheDay from './pages/DealOfTheDay'
 import CouponsAdmin from './pages/CouponsAdmin'
 import DescriptionsAdmin from './pages/DescriptionsAdmin'
@@ -31,6 +32,7 @@ export default function App() {
       <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
       <Route path="/customer-orders" element={<ProtectedRoute><CustomerOrders /></ProtectedRoute>} />
       <Route path="/set-prices" element={<ProtectedRoute><SetPrices /></ProtectedRoute>} />
+      <Route path="/set-filters" element={<ProtectedRoute><SetFilters /></ProtectedRoute>} />
       <Route path="/deals" element={<ProtectedRoute><DealOfTheDay /></ProtectedRoute>} />
       <Route path="/coupons" element={<ProtectedRoute><CouponsAdmin /></ProtectedRoute>} />
       <Route path="/descriptions" element={<ProtectedRoute><DescriptionsAdmin /></ProtectedRoute>} />

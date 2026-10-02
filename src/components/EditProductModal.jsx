@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import MediaUploadSection from './MediaUploadSection'
+import { CHAIN_TYPES, CHAIN_COLOURS, PENDANT_STYLES, isChainCategory } from '../lib/chainFilters'
 
-export default function EditProductModal({ product, onClose, onUpdated }) {
+export default function EditProductModal({ product, categoryName, onClose, onUpdated }) {
   const [name, setName] = useState(product.name)
   const [code, setCode] = useState(product.code ?? '')
   const [sellingPrice, setSellingPrice] = useState(
     product.selling_price != null ? String(product.selling_price) : ''
   )
   const [description, setDescription] = useState(product.description ?? '')
+  const [chainType, setChainType] = useState(product.chain_type ?? '')
+  const [chainColour, setChainColour] = useState(product.chain_colour ?? '')
+  const [pendantStyle, setPendantStyle] = useState(product.pendant_style ?? '')
+  const showChainFields = isChainCategory(categoryName)
   const [mediaItems, setMediaItems] = useState([])
   const [removedIds, setRemovedIds] = useState([])
   const [mainImageRemoved, setMainImageRemoved] = useState(false)
@@ -222,6 +227,11 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
         selling_price: parseFloat(sellingPrice) || null,
         description: description.trim() || null,
         image_url: newImageUrl,
+        ...(showChainFields && {
+          chain_type: chainType || null,
+          chain_colour: chainColour || null,
+          pendant_style: pendantStyle || null,
+        }),
       })
       .eq('id', product.id)
 
@@ -362,6 +372,51 @@ export default function EditProductModal({ product, onClose, onUpdated }) {
               placeholder="e.g. Handcrafted 22k gold-plated earrings with a matte finish."
             />
           </div>
+          {showChainFields && (
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Chain Type <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <select
+                  value={chainType}
+                  onChange={e => setChainType(e.target.value)}
+                  className="w-full lv-input text-sm"
+                >
+                  <option value="">—</option>
+                  {CHAIN_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Chain Colour <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <select
+                  value={chainColour}
+                  onChange={e => setChainColour(e.target.value)}
+                  className="w-full lv-input text-sm"
+                >
+                  <option value="">—</option>
+                  {CHAIN_COLOURS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+          {showChainFields && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Pendant <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <select
+                value={pendantStyle}
+                onChange={e => setPendantStyle(e.target.value)}
+                className="w-full lv-input text-sm"
+              >
+                <option value="">—</option>
+                {PENDANT_STYLES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </div>
+          )}
           {mediaLoading ? (
             <p className="text-sm text-gray-400">Loading media...</p>
           ) : (

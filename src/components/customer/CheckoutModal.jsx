@@ -6,6 +6,29 @@ const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER
 const UPI_ID = 'aadhithyaraja180-2@oksbi'
 const ALLOWED_PROOF_EXT = ['jpg', 'jpeg', 'png', 'webp', 'heic']
 
+function buildHandMessage({ name, items, total }) {
+  const orderLines = items.map((i, idx) => {
+    const codePart = i.code ? ` (${i.code})` : ''
+    const colorPart = i.color ? ` — ${i.color}` : ''
+    return `${idx + 1}. ${i.name}${codePart}${colorPart} — Qty: ${i.qty} — ₹${(i.price * i.qty).toFixed(0)}`
+  })
+
+  return [
+    `Hello LEVARO team,`,
+    ``,
+    `In-person order (paid in hand):`,
+    ``,
+    `Name: ${name}`,
+    ``,
+    `Order summary:`,
+    ...orderLines,
+    ``,
+    `Total: ₹${total.toFixed(0)}`,
+    ``,
+    `Payment: Paid in hand (cash, in person).`,
+  ].join('\n')
+}
+
 function buildMessage({ name, phone, address, landmark, locationUrl, items, subtotal, discount, couponCode, total, hasProof }) {
   const orderLines = items.map((i, idx) => {
     const codePart = i.code ? ` (${i.code})` : ''
@@ -45,6 +68,7 @@ function buildMessage({ name, phone, address, landmark, locationUrl, items, subt
 
 export default function CheckoutModal({ items, total, onClose, onClear }) {
   const [step, setStep] = useState('details') // 'details' | 'payment'
+  const [payMode, setPayMode] = useState('delivery') // 'delivery' (UPI) | 'hand' (pay in hand, in person)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
@@ -160,15 +184,62 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
     )
   }
 
-  // Details step submit → advance to payment step (no logging/WhatsApp yet).
+  // Details step submit → advance to payment step (no logging/WhatsApp yet),
+  // except "Pay in Hand" which places the order immediately from here.
   const handleDetailsSubmit = (e) => {
     e.preventDefault()
     if (numberMissing) return
+    if (payMode === 'hand') {
+      handleSendHand()
+      return
+    }
     if (phone.length !== 10) {
       setPhoneError('Please enter a valid 10-digit phone number.')
       return
     }
     setStep('payment')
+  }
+
+  // Pay in Hand: only the name is collected, no delivery details, no proof —
+  // the order is logged as paid immediately (cash handed over in person).
+  const handleSendHand = () => {
+    if (numberMissing) return
+    if (sendingRef.current) return
+    sendingRef.current = true
+
+    supabase
+      .from('customer_orders')
+      .insert({
+        customer_name: name.trim(),
+        phone: null,
+        address: null,
+        landmark: null,
+        location_url: null,
+        items: items.map(i => ({
+          product_id: i.id,
+          name: i.name,
+          code: i.code ?? null,
+          color: i.color ?? null,
+          variant_id: i.variantId ?? null,
+          qty: i.qty,
+          price: i.price,
+        })),
+        total,
+        discount: 0,
+        coupon_code: null,
+        payment_method: 'cash',
+        payment_status: 'paid',
+        payment_proof_url: null,
+        payment_proof_path: null,
+      })
+      .then(({ error }) => {
+        if (error) console.error('Failed to log customer order:', error)
+      })
+
+    const message = buildHandMessage({ name: name.trim(), items, total })
+    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
+    window.open(url, '_blank', 'noopener,noreferrer')
+    onClear()
   }
 
   // Final handoff: log order (fire-and-forget) + open WhatsApp + clear cart.
@@ -252,8 +323,26 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                 Your details
               </p>
               <p className="mt-1 text-gray-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem' }}>
-                {items.length} {items.length === 1 ? 'item' : 'items'} · ₹{payable.toFixed(0)}. Next you'll choose how to pay.
+                {items.length} {items.length === 1 ? 'item' : 'items'} · ₹{payable.toFixed(0)}.{' '}
+                {payMode === 'hand' ? 'Buying in person — just your name.' : "Next you'll choose how to pay."}
               </p>
+
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  type="button" onClick={() => setPayMode('delivery')}
+                  className={`rounded-xl py-2.5 border transition-colors font-semibold ${payMode === 'delivery' ? 'bg-brand-green text-brand-gold border-brand-green' : 'border-gray-300 text-gray-600 hover:border-brand-green'}`}
+                  style={labelStyle}
+                >
+                  🚚 Delivery
+                </button>
+                <button
+                  type="button" onClick={() => setPayMode('hand')}
+                  className={`rounded-xl py-2.5 border transition-colors font-semibold ${payMode === 'hand' ? 'bg-brand-green text-brand-gold border-brand-green' : 'border-gray-300 text-gray-600 hover:border-brand-green'}`}
+                  style={labelStyle}
+                >
+                  🤝 Pay in Hand
+                </button>
+              </div>
 
               <div className="mt-4 space-y-3">
                 <input
@@ -263,85 +352,89 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                   style={inputStyle}
                 />
 
-                <div>
-                  <input
-                    type="tel" required inputMode="numeric" maxLength={10} value={phone}
-                    onChange={handlePhoneChange} placeholder="Phone number (10 digits)"
-                    className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${phoneError ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-brand-green'}`}
-                    style={inputStyle}
-                  />
-                  {phoneError && (
-                    <p className="mt-1 text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
-                      {phoneError}
-                    </p>
-                  )}
-                </div>
+                {payMode === 'delivery' && (
+                  <>
+                    <div>
+                      <input
+                        type="tel" required inputMode="numeric" maxLength={10} value={phone}
+                        onChange={handlePhoneChange} placeholder="Phone number (10 digits)"
+                        className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${phoneError ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-brand-green'}`}
+                        style={inputStyle}
+                      />
+                      {phoneError && (
+                        <p className="mt-1 text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
+                          {phoneError}
+                        </p>
+                      )}
+                    </div>
 
-                <textarea
-                  required rows={3} value={address} onChange={e => setAddress(e.target.value)}
-                  placeholder="Delivery address"
-                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green resize-none"
-                  style={inputStyle}
-                />
-
-                <input
-                  type="text" value={landmark} onChange={e => setLandmark(e.target.value)}
-                  placeholder="Nearby landmark (optional)"
-                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green"
-                  style={inputStyle}
-                />
-
-                <button
-                  type="button" onClick={shareLocation} disabled={locating}
-                  className={`w-full rounded-xl py-2.5 border transition-colors font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60 ${locationUrl ? 'border-brand-green bg-brand-green/5 text-brand-green' : 'border-gray-300 text-gray-600 hover:border-brand-green hover:text-brand-green'}`}
-                  style={labelStyle}
-                >
-                  {locating ? 'Getting your location…' : locationUrl ? '📍 Location pinned ✓ (tap to update)' : '📍 Share my location (optional)'}
-                </button>
-                {geoError && (
-                  <p className="text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
-                    {geoError}
-                  </p>
-                )}
-
-                {/* Coupon */}
-                {appliedCoupon ? (
-                  <div className="flex items-center justify-between rounded-xl border border-brand-green bg-brand-green/5 px-3.5 py-2.5">
-                    <span className="text-brand-green font-semibold" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem' }}>
-                      🎉 {appliedCoupon.code} · −₹{discount.toFixed(0)} off
-                    </span>
-                    <button type="button" onClick={clearCoupon} className="text-gray-400 hover:text-red-500 text-xs font-medium">
-                      Remove
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      type="text" value={couponInput}
-                      onChange={e => { setCouponInput(e.target.value.toUpperCase()); if (couponMsg) setCouponMsg('') }}
-                      placeholder="Coupon code (optional)"
-                      className="flex-1 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green uppercase"
+                    <textarea
+                      required rows={3} value={address} onChange={e => setAddress(e.target.value)}
+                      placeholder="Delivery address"
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green resize-none"
                       style={inputStyle}
                     />
+
+                    <input
+                      type="text" value={landmark} onChange={e => setLandmark(e.target.value)}
+                      placeholder="Nearby landmark (optional)"
+                      className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green"
+                      style={inputStyle}
+                    />
+
                     <button
-                      type="button" onClick={applyCoupon} disabled={couponChecking || !couponInput.trim()}
-                      className="px-4 rounded-xl border border-brand-green text-brand-green font-semibold hover:bg-brand-green/5 transition-colors disabled:opacity-40"
-                      style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem', letterSpacing: '0.05em' }}
+                      type="button" onClick={shareLocation} disabled={locating}
+                      className={`w-full rounded-xl py-2.5 border transition-colors font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60 ${locationUrl ? 'border-brand-green bg-brand-green/5 text-brand-green' : 'border-gray-300 text-gray-600 hover:border-brand-green hover:text-brand-green'}`}
+                      style={labelStyle}
                     >
-                      {couponChecking ? '…' : 'Apply'}
+                      {locating ? 'Getting your location…' : locationUrl ? '📍 Location pinned ✓ (tap to update)' : '📍 Share my location (optional)'}
                     </button>
-                  </div>
-                )}
-                {couponMsg && (
-                  <p className="text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
-                    {couponMsg}
-                  </p>
-                )}
-                {appliedCoupon && (
-                  <div className="text-right" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem' }}>
-                    <span className="text-gray-400">Subtotal ₹{total.toFixed(0)} · </span>
-                    <span className="text-gray-900 font-semibold">Total ₹{payable.toFixed(0)}</span>
-                  </div>
+                    {geoError && (
+                      <p className="text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
+                        {geoError}
+                      </p>
+                    )}
+
+                    {/* Coupon */}
+                    {appliedCoupon ? (
+                      <div className="flex items-center justify-between rounded-xl border border-brand-green bg-brand-green/5 px-3.5 py-2.5">
+                        <span className="text-brand-green font-semibold" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem' }}>
+                          🎉 {appliedCoupon.code} · −₹{discount.toFixed(0)} off
+                        </span>
+                        <button type="button" onClick={clearCoupon} className="text-gray-400 hover:text-red-500 text-xs font-medium">
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text" value={couponInput}
+                          onChange={e => { setCouponInput(e.target.value.toUpperCase()); if (couponMsg) setCouponMsg('') }}
+                          placeholder="Coupon code (optional)"
+                          className="flex-1 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brand-green uppercase"
+                          style={inputStyle}
+                        />
+                        <button
+                          type="button" onClick={applyCoupon} disabled={couponChecking || !couponInput.trim()}
+                          className="px-4 rounded-xl border border-brand-green text-brand-green font-semibold hover:bg-brand-green/5 transition-colors disabled:opacity-40"
+                          style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem', letterSpacing: '0.05em' }}
+                        >
+                          {couponChecking ? '…' : 'Apply'}
+                        </button>
+                      </div>
+                    )}
+                    {couponMsg && (
+                      <p className="text-red-500" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
+                        {couponMsg}
+                      </p>
+                    )}
+                    {appliedCoupon && (
+                      <div className="text-right" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.75rem' }}>
+                        <span className="text-gray-400">Subtotal ₹{total.toFixed(0)} · </span>
+                        <span className="text-gray-900 font-semibold">Total ₹{payable.toFixed(0)}</span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -352,11 +445,11 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
               )}
 
               <button
-                type="submit" disabled={numberMissing}
+                type="submit" disabled={numberMissing || (payMode === 'hand' && !name.trim())}
                 className="mt-5 w-full bg-brand-green text-brand-gold rounded-xl py-3 hover:opacity-90 transition-opacity font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem', letterSpacing: '0.12em' }}
               >
-                CONTINUE TO PAYMENT
+                {payMode === 'hand' ? 'PLACE ORDER' : 'CONTINUE TO PAYMENT'}
               </button>
               <button
                 type="button" onClick={onClose}
@@ -403,7 +496,7 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                     Then import it from your gallery in any UPI app to pay.
                   </p>
                   <p className="mt-1 text-gray-400" style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.68rem' }}>
-                    After paying, attach the screenshot below if your app allows it; otherwise just share the receipt on WhatsApp.
+                    After paying, attach a screenshot of the payment below — it's required to place the order.
                   </p>
                   <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleProofFile} />
                   {proof ? (
@@ -423,7 +516,7 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                       className="mt-3 w-full border-2 border-dashed border-gray-300 rounded-xl py-2.5 text-gray-500 hover:border-brand-green hover:text-brand-green transition-colors disabled:opacity-60"
                       style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.72rem', letterSpacing: '0.04em' }}
                     >
-                      {uploading ? 'Uploading…' : '📎 Upload payment screenshot (optional)'}
+                      {uploading ? 'Uploading…' : '📎 Upload payment screenshot (required)'}
                     </button>
                   )}
                   {uploadError && (
@@ -439,7 +532,7 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
                     Place this order? We'll open WhatsApp to send it to us.
                   </p>
                   <button
-                    type="button" onClick={handleSend} disabled={numberMissing}
+                    type="button" onClick={handleSend} disabled={numberMissing || !proof}
                     className="mt-3 w-full bg-brand-green text-brand-gold rounded-xl py-3 hover:opacity-90 transition-opacity font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
                     style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem', letterSpacing: '0.12em' }}
                   >
@@ -456,11 +549,11 @@ export default function CheckoutModal({ items, total, onClose, onClear }) {
               ) : (
                 <>
                   <button
-                    type="button" onClick={() => setConfirming(true)} disabled={numberMissing}
+                    type="button" onClick={() => setConfirming(true)} disabled={numberMissing || !proof}
                     className="mt-5 w-full bg-brand-green text-brand-gold rounded-xl py-3 hover:opacity-90 transition-opacity font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
                     style={{ fontFamily: "'Raleway', sans-serif", fontSize: '0.8rem', letterSpacing: '0.12em' }}
                   >
-                    PLACE ORDER
+                    {proof ? 'PLACE ORDER' : 'ATTACH SCREENSHOT TO CONTINUE'}
                   </button>
                   <button
                     type="button" onClick={() => setStep('details')}

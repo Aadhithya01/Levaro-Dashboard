@@ -14,11 +14,12 @@ const STATUS_META = {
 const PAYMENT_META = {
   upi: { label: 'UPI', pill: 'bg-indigo-50 text-indigo-700 border-indigo-300' },
   cod: { label: 'COD', pill: 'bg-gray-100 text-gray-600 border-gray-300' },
+  cash: { label: 'Cash (in hand)', pill: 'bg-emerald-50 text-emerald-700 border-emerald-300' },
 }
 
 function paymentLabel(o) {
   const method = PAYMENT_META[o.payment_method] ?? PAYMENT_META.cod
-  const statusWord = o.payment_status === 'claimed' ? 'claimed' : 'unpaid'
+  const statusWord = o.payment_status === 'paid' ? 'paid' : o.payment_status === 'claimed' ? 'claimed' : 'unpaid'
   return { ...method, statusWord }
 }
 
@@ -136,15 +137,21 @@ export default function CustomerOrders() {
                     </select>
                   </div>
 
-                  {/* Contact */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mb-3">
-                    <a href={`tel:${o.phone}`} className="text-brand-green hover:underline">📞 {o.phone}</a>
-                    {o.location_url && (
-                      <a href={o.location_url} target="_blank" rel="noopener noreferrer" className="text-brand-green hover:underline">📍 Location ↗</a>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 mb-1"><span className="text-gray-400">Address:</span> {o.address}</p>
-                  {o.landmark && <p className="text-sm text-gray-600 mb-3"><span className="text-gray-400">Landmark:</span> {o.landmark}</p>}
+                  {o.payment_method === 'cash' ? (
+                    <p className="text-sm text-gray-500 mb-3">🤝 Paid in hand — bought in person, no delivery.</p>
+                  ) : (
+                    <>
+                      {/* Contact */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mb-3">
+                        {o.phone && <a href={`tel:${o.phone}`} className="text-brand-green hover:underline">📞 {o.phone}</a>}
+                        {o.location_url && (
+                          <a href={o.location_url} target="_blank" rel="noopener noreferrer" className="text-brand-green hover:underline">📍 Location ↗</a>
+                        )}
+                      </div>
+                      {o.address && <p className="text-sm text-gray-600 mb-1"><span className="text-gray-400">Address:</span> {o.address}</p>}
+                      {o.landmark && <p className="text-sm text-gray-600 mb-3"><span className="text-gray-400">Landmark:</span> {o.landmark}</p>}
+                    </>
+                  )}
 
                   {/* Items */}
                   <div className="mt-3 border-t border-brand-border pt-3">
